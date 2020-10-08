@@ -21,7 +21,7 @@ def handle_signal(signal_number, stack_frame):
 
 @click.command()
 @click.option('-i', '--app-id', default='clair-berlin-ers-co2', show_default=True, envvar='TTN_APP_ID')
-@click.option('-k', '--access-key-file', envvar='TTN_ACCESS_KEY_FILE', type=click.File())
+@click.option('-k', '--access-key-file', envvar='TTN_ACCESS_KEY_FILE', required=True, type=click.File())
 def main(app_id, access_key_file):
     signal.signal(signal.SIGINT, handle_signal)
 
