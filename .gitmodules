@@ -1,0 +1,3 @@
+[submodule "inspectair"]
+	path = inspectair
+	url = git@github.com:ClAirBerlin/inspectair.git
