@@ -7,8 +7,12 @@ does not match the current datarate.
 ## Development Setup
 
 ```
+git submodule init
+git submodule update
+. development.env
 python3 -m venv env
 . env/bin/activate
+pip install -r inspectair/requirements.txt
 pip install --editable .
 ```
 
