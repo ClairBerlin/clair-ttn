@@ -10,7 +10,7 @@ logger.addHandler(logging.StreamHandler())
 import click
 import signal
 import time
-from clairttnesr.handler import Handler
+from clairttners.handler import Handler
 
 signal_received = False
 

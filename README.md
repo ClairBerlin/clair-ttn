@@ -1,4 +1,4 @@
-# clairttnesr
+# clairttners
 
 Application for The Things Network (TTN) which subscribes to the ESR uplink
 messages and sends downlink configuration messages, if the transmission scheme
@@ -16,13 +16,13 @@ pip install -r inspectair/requirements.txt
 pip install --editable .
 ```
 
-Afterwards, the `clairttnesr` command should be available
+Afterwards, the `clairttners` command should be available
 ([source](https://click.palletsprojects.com/en/7.x/setuptools/#testing-the-script)).
 
 ## Usage
 
 ```
-Usage: clairttnesr [OPTIONS]
+Usage: clairttners [OPTIONS]
 
 Options:
   -i, --app-id TEXT               [default: clair-berlin-ers-co2]
