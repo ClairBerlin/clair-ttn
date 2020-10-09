@@ -1,6 +1,6 @@
 # clairttners
 
-Application for The Things Network (TTN) which subscribes to the ESR uplink
+Application for The Things Network (TTN) which subscribes to the ERS uplink
 messages and sends downlink configuration messages, if the transmission scheme
 does not match the current datarate.
 
