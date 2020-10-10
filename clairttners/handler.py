@@ -57,7 +57,7 @@ class Handler:
 
 def _is_message_conforming_to_spec(message):
     pdu = base64.b64decode(message.payload_raw)
-    logging.debug("decoded payload: {}".format(pdu))
+    logging.debug("decoded payload: {}".format(pdu.hex('-').upper()))
     
     measurement_count = len(ElSysErsProtocol.decode_pdu(pdu))
     logging.debug("measurement count: {}".format(measurement_count))
