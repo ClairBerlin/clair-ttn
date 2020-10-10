@@ -29,7 +29,7 @@ class Handler:
         def _configure_if_not_conforming_to_spec(message, client):
             logging.debug("uplink message received from {}".format(message.dev_id))
             logging.debug(str(message))
-            
+
             if not _is_message_conforming_to_spec(message):
                 logging.debug("message is not conforming to protocol payload specification")
 
@@ -58,14 +58,14 @@ class Handler:
 def _is_message_conforming_to_spec(message):
     pdu = base64.b64decode(message.payload_raw)
     logging.debug("decoded payload: {}".format(pdu.hex('-').upper()))
-    
+
     measurement_count = len(ElSysErsProtocol.decode_pdu(pdu))
     logging.debug("measurement count: {}".format(measurement_count))
 
     if not (hasattr(message, 'metadata') and hasattr(message.metadata, 'data_rate')):
         logging.warning("message without data_rate, assuming simulated uplink message")
         return True
-    
+
     mcs = LoRaWanMcs[message.metadata.data_rate]
     logging.debug("mcs: {}".format(mcs))
 
