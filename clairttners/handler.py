@@ -61,6 +61,10 @@ def _is_message_conforming_to_spec(message):
     
     measurement_count = len(ElSysErsProtocol.decode_pdu(pdu))
     logging.debug("measurement count: {}".format(measurement_count))
+
+    if not (hasattr(message, 'metadata') and hasattr(message.metadata, 'data_rate')):
+        logging.warning("message without data_rate, assuming simulated uplink message")
+        return True
     
     mcs = LoRaWanMcs[message.metadata.data_rate]
     logging.debug("mcs: {}".format(mcs))
