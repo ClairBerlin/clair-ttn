@@ -45,7 +45,7 @@ class Handler:
 
                 logging.debug("sending downlink payload {} ({}) to port {}".format(payload.hex(), b64_payload, port))
 
-                self._mqtt_client.send(message.dev_id, b64_payload, port, conf=True)
+                self._mqtt_client.send(message.dev_id, b64_payload, port, conf=False)
 
         self._mqtt_client.set_uplink_callback(_configure_if_not_conforming_to_spec)
 
