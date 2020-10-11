@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 # https://click.palletsprojects.com/en/7.x/setuptools/#scripts-in-packages
 
 setup(
-    name='clairttners',
+    name='clairttn',
     version='0.1',
     packages=find_packages(),
     include_package_data=True,
@@ -13,6 +13,6 @@ setup(
     ],
     entry_points='''
     [console_scripts]
-    clairttners=clairttners.scripts.clairttners:main
+    clairttn=clairttn.scripts.clairttn:main
     ''',
 )
