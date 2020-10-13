@@ -18,6 +18,11 @@ def decode_payload(payload, rx_datetime):
     return samples
 
 
+class ErsDeviceUUID(DeviceUUID):
+    def __init__(self, device_id: bytes):
+        super().__init__(device_id, "ELSYSERS")
+
+
 PayloadInfo = namedtuple('PayloadInfo', [
     'airtime',
     'measurement_count',
