@@ -9,7 +9,8 @@ setup(
     include_package_data=True,
     install_requires=[
         'Click',
-        'ttn'
+        'ttn',
+        'jsonapi_requests'
     ],
     entry_points='''
     [console_scripts]
