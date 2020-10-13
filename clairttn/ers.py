@@ -1,23 +1,6 @@
 from clairttn.types import *
 from collections import namedtuple
 
-def decode_payload(payload, rx_datetime):
-    """Decode an ERS uplink payload and return a list of samples.
-
-        Parameters:
-            payload (bytes)         : the uplink payoad
-            rx_datetime (datetime)  : the reception time of the message
-
-        Returns:
-            samples (list[Sample])  : the list of samples
-    """
-
-    measurements = _decode_measurements(payload)
-    samples = _to_samples(measurements, rx_datetime)
-
-    return samples
-
-
 class ErsDeviceUUID(DeviceUUID):
     def __init__(self, device_id: bytes):
         super().__init__(device_id, "ELSYSERS")
@@ -78,7 +61,30 @@ ERS_PARAMETER_SETS = {
 }
 
 
+def decode_payload(payload, rx_datetime):
+    """Decode an ERS uplink payload and return a list of samples.
+
+        Parameters:
+            payload (bytes)         : the uplink payoad
+            rx_datetime (datetime)  : the reception time of the message
+
+        Returns:
+            samples (list[Sample])  : the list of samples
+    """
+
+    measurements = _decode_measurements(payload)
+    samples = _to_samples(measurements, rx_datetime)
+
+    return samples
+
+
 def encode_parameter_set(parameter_set):
+    """Encode an ERS parameter set.
+
+        Returns:
+            payload (bytes) : the downlink payload
+    """
+
     payload = bytearray()
 
     header = b'\x3E' # always 0x3E
@@ -95,8 +101,10 @@ def encode_parameter_set(parameter_set):
     payload.extend(temperature_period_data)
     payload.extend(send_period_data)
 
-    return payload
+    return bytes(payload)
 
+
+# PRIVATE functions
 
 def _decode_measurements(data):
     measurements = []
