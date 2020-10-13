@@ -31,12 +31,14 @@ Options:
   -k, --access-key-file FILENAME  [required]
   -m, --mode [clairchen-forward|ers-forward|ers-configure]
                                   [required]
-  -r, --api-root TEXT
+  -r, --api-root TEXT             [default:
+                                  http://localhost:8888/api/data/v1/]
+
   --help                          Show this message and exit.
 ```
 
 The app id, the access key file, and the api root parameter can also be
-specified as the environment variables:
+specified as the following environment variables:
 
 * app id: `CLAIR_TTN_APP_ID`
 * access key: `CLAIR_TTN_ACCESS_KEY_FILE`
