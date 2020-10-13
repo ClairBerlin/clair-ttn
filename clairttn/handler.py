@@ -40,11 +40,9 @@ class _Handler:
 
 
 class _SampleForwardingHandler(_Handler):
-    def __init__(self, app_id, access_key):
+    def __init__(self, app_id, access_key, api_root):
         super().__init__(app_id, access_key)
-        api = jarequests.Api.config({
-            'API_ROOT': 'http://localhost:8888/api/data/v1/'
-        })
+        api = jarequests.Api.config({ 'API_ROOT': api_root })
         self._sample_endpoint = api.endpoint('ingest')
 
     def _handle_message(self, payload, device_id, message):
@@ -91,8 +89,8 @@ class _SampleForwardingHandler(_Handler):
 
 
 class ClairchenForwardingHandler(_SampleForwardingHandler):
-    def __init__(self, app_id, access_key):
-        super().__init__(app_id, access_key)
+    def __init__(self, app_id, access_key, api_root):
+        super().__init__(app_id, access_key, api_root)
         self._uuid_class = clairchen.ClairchenDeviceUUID
 
     def _decode_payload(self, payload, rx_datetime, message):
@@ -101,8 +99,8 @@ class ClairchenForwardingHandler(_SampleForwardingHandler):
 
 
 class ErsForwardingHandler(_SampleForwardingHandler):
-    def __init__(self, app_id, access_key):
-        super().__init__(app_id, access_key)
+    def __init__(self, app_id, access_key, api_root):
+        super().__init__(app_id, access_key, api_root)
         self._uuid_class = ers.ErsDeviceUUID
 
     def _decode_payload(self, payload, rx_datetime, message):

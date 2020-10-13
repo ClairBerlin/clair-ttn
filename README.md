@@ -1,18 +1,20 @@
 # clairttn
 
-Application for The Things Network (TTN) which subscribes to the ERS uplink
-messages and sends downlink configuration messages, if the transmission scheme
-does not match the current datarate.
+Application for The Things Network (TTN) which can be run in one of three modes:
+
+* Clairchen forwarding: subscribes to uplink messages of Clairchen nodes,
+  decodes them and forwards measurement samples to the ingest endpoint of the
+  backend API.
+* ERS forwarding: does the sampe for ERS nodes.
+* ERS configuration: subscribes to uplink messages of ERS nodes and sends
+  downlink messages to update the sensor's parameters to meet the TTN's airtime
+  constraints.
 
 ## Development Setup
 
 ```
-git submodule init
-git submodule update
-. development.env
 python3 -m venv env
 . env/bin/activate
-pip install -r inspectair/requirements.txt
 pip install --editable .
 ```
 
@@ -27,8 +29,15 @@ Usage: clairttn [OPTIONS]
 Options:
   -i, --app-id TEXT               [default: clair-berlin-ers-co2]
   -k, --access-key-file FILENAME  [required]
+  -m, --mode [clairchen-forward|ers-forward|ers-configure]
+                                  [required]
+  -r, --api-root TEXT
   --help                          Show this message and exit.
 ```
 
-The app id and the access key file parameters can also be specified as the
-environment variables `TTN_APP_ID` and `TTN_ACCESS_KEY_FILE`.
+The app id, the access key file, and the api root parameter can also be
+specified as the environment variables:
+
+* app id: `CLAIR_TTN_APP_ID`
+* access key: `CLAIR_TTN_ACCESS_KEY_FILE`
+* api root: `CLAIR_API_ROOT`
