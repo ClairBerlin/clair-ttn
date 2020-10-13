@@ -150,7 +150,7 @@ def _to_samples(measurements, rx_datetime):
 
     samples = [
         Sample(
-            timestamp = rx_timestamp - i * measurement_interval,
+            timestamp = Timestamp(rx_timestamp - i * measurement_interval),
             co2 = next(m for m in sg if type(m) == CO2),
             temperature = next((m for m in sg if type(m) == Temperature), None),
             relative_humidity = next((m for m in sg if type(m) == RelativeHumidity), None)

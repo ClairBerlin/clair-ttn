@@ -1,7 +1,7 @@
 from enum import Enum, unique
-from collections import namedtuple
 import uuid
 import hashlib
+import datetime as dt
 
 @unique
 class LoRaWanMcs(Enum):
@@ -13,15 +13,6 @@ class LoRaWanMcs(Enum):
     SF10BW125 = 10
     SF11BW125 = 11
     SF12BW125 = 12
-
-
-Sample = namedtuple('Sample', [
-    'timestamp',
-    'co2',
-    'temperature',
-    'relative_humidity'],
-    defaults=(None, None)
-)
 
 
 class DeviceUUID(uuid.UUID):
@@ -36,6 +27,30 @@ class DeviceUUID(uuid.UUID):
     def __init__(self, device_id: bytes, protocol_name: str):
         hash_code = hashlib.sha256(protocol_name.encode() + device_id)
         super().__init__(bytes=hash_code.digest()[0:16])
+
+
+class Sample:
+    def __init__(self, timestamp, co2, temperature=None, relative_humidity=None):
+        self.timestamp = timestamp
+        self.co2 = co2
+        self.temperature = temperature
+        self.relative_humidity = relative_humidity
+
+    def __str__(self):
+        return "<Sample({ts}): co2: {co2}, temperature: {temp}: rel. humidity: {hum}>".format(
+            ts = self.timestamp,
+            co2 = self.co2,
+            temp = self.temperature,
+            hum = self.relative_humidity
+        )
+
+
+class Timestamp:
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return str(dt.datetime.fromtimestamp(self.value))
 
 
 class Measurement:

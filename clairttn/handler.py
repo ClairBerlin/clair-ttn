@@ -62,13 +62,10 @@ class _SampleForwardingHandler(_Handler):
         raise NotImplementedError("needs to be implemented by subclass")
 
     def _post_sample(self, sample, device_uuid):
-        logging.debug("timestamp: {}".format(dt.datetime.fromtimestamp(sample.timestamp)))
-        logging.debug("co2: {}".format(sample.co2))
-        logging.debug("temperature: {}".format(sample.temperature))
-        logging.debug("humidity: {}".format(sample.relative_humidity))
+        logging.debug("sample: {}".format(sample))
 
         sample_attributes = {
-            "timestamp_s": sample.timestamp,
+            "timestamp_s": sample.timestamp.value,
             "co2_ppm": sample.co2.value
         }
         if sample.temperature:
