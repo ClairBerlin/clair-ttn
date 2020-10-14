@@ -3,7 +3,6 @@ import logging
 import traceback
 import base64
 import dateutil.parser as dtparser
-import datetime as dt
 import jsonapi_requests as jarequests
 import clairttn.ers as ers
 import clairttn.clairchen as clairchen
@@ -12,7 +11,7 @@ import clairttn.clairchen as clairchen
 class _Handler:
     def __init__(self, app_id, access_key):
         logging.debug("app id: {}".format(app_id))
-        logging.debug(type(self))
+
         ttnHandler = ttn.HandlerClient(app_id, access_key)
         self._mqtt_client = ttnHandler.data()
 
@@ -22,12 +21,13 @@ class _Handler:
 
             try:
                 payload = base64.b64decode(message.payload_raw)
-                logging.debug("decoded payload: {}".format(payload.hex('-').upper()))
+                logging.debug("payload: {}".format(payload.hex('-').upper()))
 
                 device_id = bytes.fromhex(message.hardware_serial)
                 logging.debug("device_id: {}".format(device_id.hex()))
 
                 self._handle_message(payload, device_id, message)
+
             except Exception as e:
                 logging.error("exception during message handling: {}".format(e))
                 logging.error(traceback.format_exc())
@@ -47,6 +47,7 @@ class _Handler:
 class _SampleForwardingHandler(_Handler):
     def __init__(self, app_id, access_key, api_root):
         super().__init__(app_id, access_key)
+
         api = jarequests.Api.config({ 'API_ROOT': api_root })
         self._sample_endpoint = api.endpoint('ingest')
 
