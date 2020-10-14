@@ -1,7 +1,7 @@
 from clairttn.types import *
 import datetime as dt
 from collections import namedtuple
-from typing import List
+import typing
 
 
 class ClairchenDeviceUUID(DeviceUUID):
@@ -11,7 +11,7 @@ class ClairchenDeviceUUID(DeviceUUID):
         super().__init__(device_id, "CLAIRCHEN")
 
 
-def decode_payload(payload: bytes, rx_datetime: dt.datetime, mcs: LoRaWanMcs) -> List[Sample]:
+def decode_payload(payload: bytes, rx_datetime: dt.datetime, mcs: LoRaWanMcs) -> typing.List[Sample]:
     """Decode a Clairchen uplink payload and return a list of samples."""
 
     measurements = _decode_measurements(payload)
@@ -57,7 +57,7 @@ PROTOCOL_PAYLOAD_SPECIFICATION = {
 }
 
 
-def _decode_measurements(data):
+def _decode_measurements(data: bytes):
     version, message_id, message_header, data = _decode_header(data)
 
     if version != 0:
@@ -75,7 +75,7 @@ def _decode_measurements(data):
     return measurements
 
 
-def _to_samples(measurements, rx_datetime, mcs):
+def _to_samples(measurements: typing.List[typing.Dict], rx_datetime: dt.datetime, mcs: LoRaWanMcs):
     measurement_interval = PROTOCOL_PAYLOAD_SPECIFICATION[mcs].measurement_interval
     rx_timestamp = round(rx_datetime.timestamp())
     sample_count = len(measurements)
