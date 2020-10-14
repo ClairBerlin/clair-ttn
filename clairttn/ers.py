@@ -66,7 +66,7 @@ ERS_PARAMETER_SETS = {
 
 
 def decode_payload(payload: bytes, rx_datetime: dt.datetime) -> typing.List[Sample]:
-    """Decode an ERS uplink payload and return a list of samples."""
+    """Decode an ERS uplink payload and return a list of samples in chronoligcal order."""
 
     measurements = _decode_measurements(payload)
     samples = _to_samples(measurements, rx_datetime)
@@ -156,6 +156,9 @@ def _to_samples(measurements, rx_datetime):
             relative_humidity = next((m for m in sg if type(m) == RelativeHumidity), None)
         ) for i, sg in enumerate(sample_groups)
     ]
+
+    # return in chronological order
+    samples.reverse()
 
     return samples
 
