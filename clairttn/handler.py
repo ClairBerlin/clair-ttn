@@ -82,7 +82,7 @@ class _SampleForwardingHandler(_Handler):
             type = 'Sample',
             attributes = sample_attributes,
             relationships = {
-                "node_ref": {
+                "node_ref_id": {
                     "data": {
                         "type": "Node",
                         "id": str(device_uuid)
