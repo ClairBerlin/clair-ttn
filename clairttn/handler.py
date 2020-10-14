@@ -75,7 +75,7 @@ class _SampleForwardingHandler(_Handler):
         if sample.temperature:
             sample_attributes["temperature_celsius"] = sample.temperature.value
         if sample.relative_humidity:
-            sample_attributes["rel_humidity_percent"] = sampe.relative_humidity.value
+            sample_attributes["rel_humidity_percent"] = sample.relative_humidity.value
 
         sample_object = jarequests.JsonApiObject(
             type = 'Sample',
