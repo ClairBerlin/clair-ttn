@@ -30,7 +30,7 @@ HANDLERS = [
 @click.command()
 @click.option('-i', '--app-id', default='clair-berlin-ers-co2', show_default=True, envvar='CLAIR_TTN_APP_ID')
 @click.option('-k', '--access-key-file', envvar='CLAIR_TTN_ACCESS_KEY_FILE', required=True, type=click.File())
-@click.option('-m', '--mode', type=click.Choice(HANDLERS), required=True)
+@click.option('-m', '--mode', type=click.Choice(HANDLERS), envvar="CLAIR_MODE", required=True)
 @click.option('-r', '--api-root', envvar="CLAIR_API_ROOT", default='http://localhost:8888/ingest/v1/', show_default=True)
 def main(app_id, access_key_file, mode, api_root):
     signal.signal(signal.SIGINT, handle_signal)
