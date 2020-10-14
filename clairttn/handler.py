@@ -4,6 +4,7 @@ import traceback
 import base64
 import dateutil.parser as dtparser
 import jsonapi_requests as jarequests
+import clairttn.types as types
 import clairttn.ers as ers
 import clairttn.clairchen as clairchen
 
@@ -102,7 +103,11 @@ class ClairchenForwardingHandler(_SampleForwardingHandler):
         self._uuid_class = clairchen.ClairchenDeviceUUID
 
     def _decode_payload(self, payload, rx_datetime, message):
-        mcs = LoRaWanMcs[message.metadata.data_rate]
+        try:
+            mcs = types.LoRaWanMcs[message.metadata.data_rate]
+        except:
+            logging.warning("message without data rate, assuming simulated uplink");
+            mcs = types.LoRaWanMcs.SF9BW125
         return clairchen.decode_payload(payload, rx_datetime, mcs)
 
 
