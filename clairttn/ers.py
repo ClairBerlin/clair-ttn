@@ -55,7 +55,7 @@ ErsParameterSet = namedtuple('ErsParameterSet', [
 ])
 
 
-ERS_PARAMETER_SETS = {
+PARAMETER_SETS = {
     mcs: ErsParameterSet(
         sampling_period = PROTOCOL_PAYLOAD_SPECIFICATION[mcs].measurement_interval,
         temperature_period = 1 if mcs.value < LoRaWanMcs.SF10BW125.value else 0,

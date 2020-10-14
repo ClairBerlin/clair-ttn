@@ -133,7 +133,7 @@ class ErsConfigurationHandler(_Handler):
             logging.debug("message is not conforming to protocol payload specification")
 
             mcs = LoRaWanMcs[message.metadata.data_rate]
-            parameter_set = ERS_PARAMETER_SETS[mcs]
+            parameter_set = ers.PARAMETER_SETS[mcs]
             logging.debug("new parameter set: {}".format(parameter_set))
 
             payload = _encode_parameter_set(parameter_set)
