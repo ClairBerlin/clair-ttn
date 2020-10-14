@@ -16,7 +16,7 @@ class LoRaWanMcs(Enum):
 
 
 class DeviceUUID(uuid.UUID):
-    """Convert the model-specific physical device ID into a uniform node ID.
+    """UUID for Clair devices
 
     Different device models may have different types identifiers. For the Clair
     system to work with multiple device models, we use a uniform node
@@ -29,8 +29,59 @@ class DeviceUUID(uuid.UUID):
         super().__init__(bytes=hash_code.digest()[0:16])
 
 
+class Timestamp:
+    """A point of time represented in seconds since epoch"""
+
+    def __init__(self, value: int):
+        self.value = value
+
+    def __str__(self):
+        return str(dt.datetime.fromtimestamp(self.value))
+
+
+class Measurement:
+    """Base class for all Clair measurements
+
+    Attributes
+    ----------
+    value: float
+        The value of the measurement
+
+    """
+
+    def __init__(self, value: float):
+        self.value = value
+
+
+class CO2(Measurement):
+    """CO2 measurement in ppm"""
+
+    def __str__(self):
+        return "{} ppm".format(self.value)
+
+
+class Temperature(Measurement):
+    """Temperature measurement in °C"""
+
+    def __str__(self):
+        return "{} °C".format(self.value)
+
+
+class RelativeHumidity(Measurement):
+    """Relative humidity measurement in %"""
+
+    def __str__(self):
+        return "{} %".format(self.value)
+
+
 class Sample:
-    def __init__(self, timestamp, co2, temperature=None, relative_humidity=None):
+    """A set of measurements taken at the same point of time"""
+
+    def __init__(self,
+                 timestamp: Timestamp,
+                 co2: CO2,
+                 temperature: Temperature = None,
+                 relative_humidity: RelativeHumidity = None):
         self.timestamp = timestamp
         self.co2 = co2
         self.temperature = temperature
@@ -45,37 +96,11 @@ class Sample:
         )
 
 
-class Timestamp:
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return str(dt.datetime.fromtimestamp(self.value))
-
-
-class Measurement:
-    def __init__(self, value):
-        self.value = value
-
-
-class CO2(Measurement):
-    def __str__(self):
-        return "{} ppm".format(self.value)
-
-
-class Temperature(Measurement):
-    def __str__(self):
-        return "{} °C".format(self.value)
-
-
-class RelativeHumidity(Measurement):
-    def __str__(self):
-        return "{} %".format(self.value)
-
-
 class PayloadFormatException(Exception):
+    """Exception which is thrown in case of an inadmissible payload format"""
     pass
 
 
 class PayloadContentException(Exception):
+    """Exception which is thrown in case of an inadmissible payload content"""
     pass

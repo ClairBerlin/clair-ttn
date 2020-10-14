@@ -94,7 +94,9 @@ class _SampleForwardingHandler(_Handler):
 
 
 class ClairchenForwardingHandler(_SampleForwardingHandler):
-    def __init__(self, app_id, access_key, api_root):
+    """A handler for Clairchen devices which forwards samples to the backend API"""
+
+    def __init__(self, app_id: str, access_key: str, api_root: str):
         super().__init__(app_id, access_key, api_root)
         self._uuid_class = clairchen.ClairchenDeviceUUID
 
@@ -104,7 +106,9 @@ class ClairchenForwardingHandler(_SampleForwardingHandler):
 
 
 class ErsForwardingHandler(_SampleForwardingHandler):
-    def __init__(self, app_id, access_key, api_root):
+    """A handler for ERS devices which forwards samples to the backend API"""
+
+    def __init__(self, app_id: str, access_key: str, api_root: str):
         super().__init__(app_id, access_key, api_root)
         self._uuid_class = ers.ErsDeviceUUID
 
@@ -113,6 +117,8 @@ class ErsForwardingHandler(_SampleForwardingHandler):
 
 
 class ErsConfigurationHandler(_Handler):
+    """A handler for ERS devices which sends parameter downlink messages"""
+
     def _handle_message(self, payload, device_id, message):
         logging.debug("uplink message received from {}".format(message.dev_id))
         logging.debug(str(message))

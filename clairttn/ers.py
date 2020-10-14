@@ -1,7 +1,11 @@
 from clairttn.types import *
 from collections import namedtuple
+import typing
+import datetime as dt
 
 class ErsDeviceUUID(DeviceUUID):
+    """UUID for ERS devices"""
+
     def __init__(self, device_id: bytes):
         super().__init__(device_id, "ELSYSERS")
 
@@ -61,16 +65,8 @@ ERS_PARAMETER_SETS = {
 }
 
 
-def decode_payload(payload, rx_datetime):
-    """Decode an ERS uplink payload and return a list of samples.
-
-        Parameters:
-            payload (bytes)         : the uplink payoad
-            rx_datetime (datetime)  : the reception time of the message
-
-        Returns:
-            samples (list[Sample])  : the list of samples
-    """
+def decode_payload(payload: bytes, rx_datetime: dt.datetime) -> typing.List[Sample]:
+    """Decode an ERS uplink payload and return a list of samples."""
 
     measurements = _decode_measurements(payload)
     samples = _to_samples(measurements, rx_datetime)
@@ -78,12 +74,8 @@ def decode_payload(payload, rx_datetime):
     return samples
 
 
-def encode_parameter_set(parameter_set):
-    """Encode an ERS parameter set.
-
-        Returns:
-            payload (bytes) : the downlink payload
-    """
+def encode_parameter_set(parameter_set: ErsParameterSet) -> bytes:
+    """Encode an ERS parameter set."""
 
     payload = bytearray()
 
