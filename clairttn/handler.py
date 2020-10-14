@@ -1,5 +1,6 @@
 import ttn
 import logging
+import traceback
 import base64
 import dateutil.parser as dtparser
 import datetime as dt
@@ -19,13 +20,17 @@ class _Handler:
             logging.debug("uplink message received from {}".format(message.dev_id))
             logging.debug(str(message))
 
-            payload = base64.b64decode(message.payload_raw)
-            logging.debug("decoded payload: {}".format(payload.hex('-').upper()))
+            try:
+                payload = base64.b64decode(message.payload_raw)
+                logging.debug("decoded payload: {}".format(payload.hex('-').upper()))
 
-            device_id = bytes.fromhex(message.hardware_serial)
-            logging.debug("device_id: {}".format(device_id.hex()))
+                device_id = bytes.fromhex(message.hardware_serial)
+                logging.debug("device_id: {}".format(device_id.hex()))
 
-            self._handle_message(payload, device_id, message)
+                self._handle_message(payload, device_id, message)
+            except Exception as e:
+                logging.error("exception during message handling: {}".format(e))
+                logging.error(traceback.format_exc())
 
         self._mqtt_client.set_uplink_callback(_uplink_callback)
 
