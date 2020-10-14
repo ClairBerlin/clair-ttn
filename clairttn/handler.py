@@ -132,7 +132,7 @@ class ErsConfigurationHandler(_Handler):
         if not self._is_conforming(payload, message):
             logging.debug("message is not conforming to protocol payload specification")
 
-            mcs = LoRaWanMcs[message.metadata.data_rate]
+            mcs = types.LoRaWanMcs[message.metadata.data_rate]
             parameter_set = ers.PARAMETER_SETS[mcs]
             logging.debug("new parameter set: {}".format(parameter_set))
 
@@ -154,7 +154,7 @@ class ErsConfigurationHandler(_Handler):
             logging.warning("message without data_rate, assuming simulated uplink message")
             return True
 
-        mcs = LoRaWanMcs[message.metadata.data_rate]
+        mcs = types.LoRaWanMcs[message.metadata.data_rate]
         logging.debug("mcs: {}".format(mcs))
 
         protocol_payload_specification = ers.PROTOCOL_PAYLOAD_SPECIFICATION[mcs]
