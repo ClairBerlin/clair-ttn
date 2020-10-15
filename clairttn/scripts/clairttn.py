@@ -23,7 +23,8 @@ def handle_signal(signal_number, stack_frame):
 HANDLERS = [
     'clairchen-forward',
     'ers-forward',
-    'ers-configure'
+    'ers-configure',
+    'talkpool-forward'
 ]
 
 
@@ -43,6 +44,8 @@ def main(app_id, access_key_file, mode, api_root):
         handler = clhandler.ErsForwardingHandler(app_id, access_key, api_root)
     elif mode == 'ers-configure':
         handler = clhandler.ErsConfigurationHandler(app_id, access_key)
+    elif mode == 'talkpool-forward':
+        handler = clhandler.TalkpoolForwardingHandler(app_id, access_key, api_root)
     else:
         # never reached thanks to click's option parsing
         click.echo("invalid mode: {}".format(mode))

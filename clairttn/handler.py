@@ -5,8 +5,9 @@ import base64
 import dateutil.parser as dtparser
 import jsonapi_requests as jarequests
 import clairttn.types as types
-import clairttn.ers as ers
 import clairttn.clairchen as clairchen
+import clairttn.ers as ers
+import clairttn.talkpool as talkpool
 
 
 class _Handler:
@@ -124,6 +125,17 @@ class ErsForwardingHandler(_SampleForwardingHandler):
 
     def _decode_payload(self, payload, rx_datetime, message):
         return ers.decode_payload(payload, rx_datetime)
+
+
+class TalkpoolForwardingHandler(_SampleForwardingHandler):
+    """A handler for Talkpool devices which forwards samples to the backend API"""
+
+    def __init__(self, app_id: str, access_key: str, api_root: str):
+        super().__init__(app_id, access_key, api_root)
+        self._uuid_class = talkpool.TalkpoolDeviceUUID
+
+    def _decode_payload(self, payload, rx_datetime, message):
+        return talkpool.decode_payload(payload, rx_datetime)
 
 
 class ErsConfigurationHandler(_Handler):
