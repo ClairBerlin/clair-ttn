@@ -9,6 +9,7 @@ Application for The Things Network (TTN) which can be run in one of three modes:
 * ERS configuration: subscribes to uplink messages of ERS nodes and sends
   downlink messages to update the sensor's parameters to meet the TTN's airtime
   constraints.
+* OY1012 forwarding: forwarding for Talkpool OY1012.
 
 ## Development Setup
 
@@ -29,11 +30,9 @@ Usage: clairttn [OPTIONS]
 Options:
   -i, --app-id TEXT               [default: clair-berlin-ers-co2]
   -k, --access-key-file FILENAME  [required]
-  -m, --mode [clairchen-forward|ers-forward|ers-configure]
+  -m, --mode [clairchen-forward|ers-forward|ers-configure|oy1012-forward]
                                   [required]
-  -r, --api-root TEXT             [default:
-                                  http://localhost:8888/api/data/v1/]
-
+  -r, --api-root TEXT             [default: http://localhost:8888/ingest/v1/]
   --help                          Show this message and exit.
 ```
 
