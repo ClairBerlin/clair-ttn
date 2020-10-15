@@ -4,11 +4,11 @@ from collections import namedtuple
 import typing
 
 
-class TalkpoolDeviceUUID(DeviceUUID):
+class Oy1012DeviceUUID(DeviceUUID):
     """UUID for Clairchen devices"""
 
     def __init__(self, device_id: bytes):
-        super().__init__(device_id, "TALKPOOL")
+        super().__init__(device_id, "TALKPOOLOY1012")
 
 
 def decode_payload(payload: bytes, rx_datetime: dt.datetime) -> typing.List[Sample]:

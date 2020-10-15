@@ -132,7 +132,7 @@ class Oy1012ForwardingHandler(_SampleForwardingHandler):
 
     def __init__(self, app_id: str, access_key: str, api_root: str):
         super().__init__(app_id, access_key, api_root)
-        self._uuid_class = oy1012.TalkpoolDeviceUUID
+        self._uuid_class = oy1012.Oy1012DeviceUUID
 
     def _decode_payload(self, payload, rx_datetime, message):
         return oy1012.decode_payload(payload, rx_datetime)
