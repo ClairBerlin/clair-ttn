@@ -20,6 +20,10 @@ class _Handler:
             logging.debug("uplink message received from {}".format(message.dev_id))
             logging.debug(str(message))
 
+            if not message.payload_raw:
+                logging.warning("message without payload, skipping...")
+                return
+
             try:
                 payload = base64.b64decode(message.payload_raw)
                 logging.debug("payload: {}".format(payload.hex('-').upper()))
