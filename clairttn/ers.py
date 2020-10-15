@@ -4,7 +4,7 @@ import typing
 import datetime as dt
 
 class ErsDeviceUUID(DeviceUUID):
-    """UUID for ERS devices"""
+    """UUID for Elsys ERS devices"""
 
     def __init__(self, device_id: bytes):
         super().__init__(device_id, "ELSYSERS")

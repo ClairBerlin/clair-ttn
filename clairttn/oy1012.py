@@ -5,7 +5,7 @@ import typing
 
 
 class Oy1012DeviceUUID(DeviceUUID):
-    """UUID for Clairchen devices"""
+    """UUID for Talkpool OY1012 devices"""
 
     def __init__(self, device_id: bytes):
         super().__init__(device_id, "TALKPOOLOY1012")
