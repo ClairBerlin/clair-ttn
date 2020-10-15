@@ -1,6 +1,6 @@
 # clairttn
 
-Application for The Things Network (TTN) which can be run in one of three modes:
+Application for The Things Network (TTN) which can be run in the following modes:
 
 * Clairchen forwarding: subscribes to uplink messages of Clairchen nodes,
   decodes them and forwards measurement samples to the ingest endpoint of the
