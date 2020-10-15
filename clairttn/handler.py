@@ -7,7 +7,7 @@ import jsonapi_requests as jarequests
 import clairttn.types as types
 import clairttn.clairchen as clairchen
 import clairttn.ers as ers
-import clairttn.talkpool as talkpool
+import clairttn.oy1012 as oy1012
 
 
 class _Handler:
@@ -117,7 +117,7 @@ class ClairchenForwardingHandler(_SampleForwardingHandler):
 
 
 class ErsForwardingHandler(_SampleForwardingHandler):
-    """A handler for ERS devices which forwards samples to the backend API"""
+    """A handler for Elsys ERS devices which forwards samples to the backend API"""
 
     def __init__(self, app_id: str, access_key: str, api_root: str):
         super().__init__(app_id, access_key, api_root)
@@ -127,19 +127,19 @@ class ErsForwardingHandler(_SampleForwardingHandler):
         return ers.decode_payload(payload, rx_datetime)
 
 
-class TalkpoolForwardingHandler(_SampleForwardingHandler):
-    """A handler for Talkpool devices which forwards samples to the backend API"""
+class Oy1012ForwardingHandler(_SampleForwardingHandler):
+    """A handler for Talkpool OY1012 devices which forwards samples to the backend API"""
 
     def __init__(self, app_id: str, access_key: str, api_root: str):
         super().__init__(app_id, access_key, api_root)
-        self._uuid_class = talkpool.TalkpoolDeviceUUID
+        self._uuid_class = oy1012.TalkpoolDeviceUUID
 
     def _decode_payload(self, payload, rx_datetime, message):
-        return talkpool.decode_payload(payload, rx_datetime)
+        return oy1012.decode_payload(payload, rx_datetime)
 
 
 class ErsConfigurationHandler(_Handler):
-    """A handler for ERS devices which sends parameter downlink messages"""
+    """A handler for Elsys ERS devices which sends parameter downlink messages"""
 
     def _handle_message(self, payload, device_id, message):
         logging.debug("uplink message received from {}".format(message.dev_id))
