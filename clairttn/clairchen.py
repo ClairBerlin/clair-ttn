@@ -1,17 +1,17 @@
-from clairttn.types import *
 import datetime as dt
 from collections import namedtuple
 import typing
+import clairttn.types as t
 
 
-class ClairchenDeviceUUID(DeviceUUID):
+class ClairchenDeviceUUID(t.DeviceUUID):
     """UUID for Clairchen devices"""
 
     def __init__(self, device_id: bytes):
         super().__init__(device_id, "CLAIRCHEN")
 
 
-def decode_payload(payload: bytes, rx_datetime: dt.datetime, mcs: LoRaWanMcs) -> typing.List[Sample]:
+def decode_payload(payload: bytes, rx_datetime: dt.datetime, mcs: t.LoRaWanMcs) -> typing.List[t.Sample]:
     """Decode a Clairchen uplink payload and return a list of samples."""
 
     measurements = _decode_measurements(payload)
@@ -26,31 +26,31 @@ PayloadInfo = namedtuple('PayloadInfo', [
 
 
 PROTOCOL_PAYLOAD_SPECIFICATION = {
-    LoRaWanMcs.SF7BW250: PayloadInfo(
+    t.LoRaWanMcs.SF7BW250: PayloadInfo(
         airtime=0.0257,
         measurement_count=2,
         measurement_interval=38),
-    LoRaWanMcs.SF7BW125: PayloadInfo(
+    t.LoRaWanMcs.SF7BW125: PayloadInfo(
         airtime=0.0515,
         measurement_count=2,
         measurement_interval=75),
-    LoRaWanMcs.SF8BW125: PayloadInfo(
+    t.LoRaWanMcs.SF8BW125: PayloadInfo(
         airtime=0.0927,
         measurement_count=2,
         measurement_interval=134),
-    LoRaWanMcs.SF9BW125: PayloadInfo(
+    t.LoRaWanMcs.SF9BW125: PayloadInfo(
         airtime=0.1853,
         measurement_count=3,
         measurement_interval=178),
-    LoRaWanMcs.SF10BW125: PayloadInfo(
+    t.LoRaWanMcs.SF10BW125: PayloadInfo(
         airtime=0.3707,
         measurement_count=5,
         measurement_interval=214),
-    LoRaWanMcs.SF11BW125: PayloadInfo(
+    t.LoRaWanMcs.SF11BW125: PayloadInfo(
         airtime=0.7414,
         measurement_count=4,
         measurement_interval=534),
-    LoRaWanMcs.SF12BW125: PayloadInfo(
+    t.LoRaWanMcs.SF12BW125: PayloadInfo(
         airtime=1.4828,
         measurement_count=5,
         measurement_interval=855)
@@ -61,28 +61,28 @@ def _decode_measurements(data: bytes):
     version, message_id, message_header, data = _decode_header(data)
 
     if version != 0:
-        raise PayloadContentException("unsupported version number: {}".format(version))
+        raise t.PayloadContentException("unsupported version number: {}".format(version))
 
     if message_id != 0:
-        raise PayloadContentException("unsupported message id: {}".format(message_id))
+        raise t.PayloadContentException("unsupported message id: {}".format(message_id))
 
     sample_count = message_header + 1
 
     measurements = _decode_sample_bytes(data)
     if len(measurements) != sample_count:
-        raise PayloadContentException("incorrect sample count: {}".format(sample_count))
+        raise t.PayloadContentException("incorrect sample count: {}".format(sample_count))
 
     return measurements
 
 
-def _to_samples(measurements: typing.List[typing.Dict], rx_datetime: dt.datetime, mcs: LoRaWanMcs):
+def _to_samples(measurements: typing.List[typing.Dict], rx_datetime: dt.datetime, mcs: t.LoRaWanMcs):
     measurement_interval = PROTOCOL_PAYLOAD_SPECIFICATION[mcs].measurement_interval
     rx_timestamp = round(rx_datetime.timestamp())
     sample_count = len(measurements)
 
     samples = [
-        Sample(
-            timestamp = Timestamp(rx_timestamp - (sample_count - i - 1) * measurement_interval),
+        t.Sample(
+            timestamp = t.Timestamp(rx_timestamp - (sample_count - i - 1) * measurement_interval),
             co2 = measurement['co2'],
             temperature = measurement['temperature'],
             relative_humidity = measurement['relative_humidity']
@@ -119,7 +119,7 @@ def _decode_sample_bytes(data: bytes):
 
 def _decode_sample(data: bytes):
     if len(data) < 2:
-        raise PayloadFormatException("inadmissible number of sample bytes: {}".format(len(data)))
+        raise t.PayloadFormatException("inadmissible number of sample bytes: {}".format(len(data)))
 
     remaining_data = data[2:]
 
@@ -130,4 +130,4 @@ def _decode_sample(data: bytes):
     temp_value = (temp_hum_int & 0b11111000) >> 3
     hum_value = ((temp_hum_int & 0b111) * 10) + 10
 
-    return (CO2(co2_value), Temperature(temp_value), RelativeHumidity(hum_value), remaining_data)
+    return (t.CO2(co2_value), t.Temperature(temp_value), t.RelativeHumidity(hum_value), remaining_data)
