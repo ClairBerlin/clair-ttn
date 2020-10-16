@@ -3,6 +3,7 @@ import logging
 import traceback
 import base64
 import dateutil.parser as dtparser
+import datetime as dt
 import jsonapi_requests as jarequests
 import clairttn.types as types
 import clairttn.clairchen as clairchen
@@ -61,12 +62,16 @@ class _SampleForwardingHandler(_Handler):
         rx_datetime = dtparser.parse(message.metadata.time)
         logging.debug("rx_datetime: {}".format(rx_datetime))
 
-        device_uuid = self._uuid_class(device_id)
+        uuid_class = self._get_uuid_class()
+        device_uuid = uuid_class(device_id)
         logging.debug("device_uuid: {}".format(device_uuid))
 
         samples = self._decode_payload(payload, rx_datetime, message)
         for sample in samples:
             self._post_sample(sample, device_uuid)
+
+    def _get_uuid_class(self):
+        raise NotImplementedError("needs to be implemented by subclass")
 
     def _decode_payload(self, payload, rx_datetime, message):
         raise NotImplementedError("needs to be implemented by subclass")
@@ -105,13 +110,15 @@ class ClairchenForwardingHandler(_SampleForwardingHandler):
 
     def __init__(self, app_id: str, access_key: str, api_root: str):
         super().__init__(app_id, access_key, api_root)
-        self._uuid_class = clairchen.ClairchenDeviceUUID
+
+    def _get_uuid_class(self):
+        return clairchen.ClairchenDeviceUUID
 
     def _decode_payload(self, payload, rx_datetime, message):
         try:
             mcs = types.LoRaWanMcs[message.metadata.data_rate]
         except:
-            logging.warning("message without data rate, assuming simulated uplink");
+            logging.warning("message without data rate, assuming simulated uplink")
             mcs = types.LoRaWanMcs.SF9BW125
         return clairchen.decode_payload(payload, rx_datetime, mcs)
 
@@ -121,7 +128,9 @@ class ErsForwardingHandler(_SampleForwardingHandler):
 
     def __init__(self, app_id: str, access_key: str, api_root: str):
         super().__init__(app_id, access_key, api_root)
-        self._uuid_class = ers.ErsDeviceUUID
+
+    def _get_uuid_class(self):
+        return ers.ErsDeviceUUID
 
     def _decode_payload(self, payload, rx_datetime, message):
         return ers.decode_payload(payload, rx_datetime)
@@ -132,7 +141,9 @@ class Oy1012ForwardingHandler(_SampleForwardingHandler):
 
     def __init__(self, app_id: str, access_key: str, api_root: str):
         super().__init__(app_id, access_key, api_root)
-        self._uuid_class = oy1012.Oy1012DeviceUUID
+
+    def _get_uuid_class(self):
+        return oy1012.Oy1012DeviceUUID
 
     def _decode_payload(self, payload, rx_datetime, message):
         return oy1012.decode_payload(payload, rx_datetime)
@@ -152,7 +163,7 @@ class ErsConfigurationHandler(_Handler):
             parameter_set = ers.PARAMETER_SETS[mcs]
             logging.debug("new parameter set: {}".format(parameter_set))
 
-            payload = _encode_parameter_set(parameter_set)
+            payload = ers.encode_parameter_set(parameter_set)
             b64_payload = str(base64.b64encode(payload), 'ascii')
 
             # ERS downlink payloads are sent on the configured port + 1
@@ -163,7 +174,7 @@ class ErsConfigurationHandler(_Handler):
             self._mqtt_client.send(message.dev_id, b64_payload, port, conf=False)
 
     def _is_conforming(self, payload, message):
-        measurement_count = len(ers.decode_payload(payload))
+        measurement_count = len(ers.decode_payload(payload, dt.datetime.now()))
         logging.debug("measurement count: {}".format(measurement_count))
 
         if not (hasattr(message, 'metadata') and hasattr(message.metadata, 'data_rate')):
