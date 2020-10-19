@@ -68,6 +68,8 @@ class _SampleForwardingHandler(_Handler):
 
         samples = self._decode_payload(payload, rx_datetime, message)
         for sample in samples:
+            # the ingest enpdoint expects the rel. humidity to be an integer
+            sample.relative_humidity.value = round(sample.relative_humidity.value)
             self._post_sample(sample, device_uuid)
 
     def _get_uuid_class(self):
