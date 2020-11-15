@@ -55,7 +55,10 @@ class _SampleForwardingHandler(_Handler):
     def __init__(self, app_id, access_key, api_root):
         super().__init__(app_id, access_key)
 
-        api = jarequests.Api.config({ 'API_ROOT': api_root })
+        api = jarequests.Api.config({
+            'API_ROOT': api_root,
+            'TIMEOUT': 5 # we observed extreme timeouts with Django in DEBUG mode
+        })
         self._sample_endpoint = api.endpoint('ingest')
 
     def _handle_message(self, payload, device_id, message):
