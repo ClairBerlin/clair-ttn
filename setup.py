@@ -10,10 +10,12 @@ setup(
         'Click',
         'ttn',
         'jsonapi_requests',
-        'python-dateutil'
+        'python-dateutil',
+        'requests'
     ],
     entry_points='''
     [console_scripts]
     clairttn=clairttn.scripts.clairttn:main
+    fixtures=clairttn.scripts.fixtures:get_fixtures
     ''',
 )
