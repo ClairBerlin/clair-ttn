@@ -65,6 +65,7 @@ def get_fixtures(base_url, access_key_file, payload_type, duration):
 
             fixtures.append(fixture)
 
+    fixtures.sort(key=lambda f: f['fields']['timestamp_s'])
     print(json.dumps(fixtures, indent=4))
 
 if __name__ == '__main__':
