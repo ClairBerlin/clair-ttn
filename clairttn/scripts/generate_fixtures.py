@@ -6,6 +6,7 @@ import base64
 import json
 import clairttn.ers as ers
 import clairttn.clairchen as clairchen
+import clairttn.types as types
 import dateutil.parser as dtparser
 
 
@@ -55,7 +56,10 @@ def generate_fixtures(base_url, access_key_file, payload_type, duration):
     for pdu in pdus:
         payload = base64.b64decode(pdu['raw'])
         rx_datetime = dtparser.parse(pdu['time'])
-        samples = ers.decode_payload(payload, rx_datetime)
+        try:
+            samples = ers.decode_payload(payload, rx_datetime)
+        except types.PayloadContentException:
+            continue
         for sample in samples:
             fields = {
                 'node': UUID_MAP.get(pdu['device_id'], pdu['device_id']),
