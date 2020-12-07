@@ -93,16 +93,17 @@ Options:
 ## clair-generate-nfc-config
 
 ```
-Usage: clair-generate-nfc-config [OPTIONS] DEVICE_EUI
+Usage: clair-generate-nfc-config [OPTIONS] TTN_APP_ID ACCESS_KEY_FILE
+                                 [DEVICE_EUI]...
 
   Create NFC config files for a device registered in the TTN.
 
+  TTN_APP_ID is the id of the TTN application.
+  ACCESS_KEY_FILE is the file containing the access key of the TTN application.
   DEVICE_EUI is the TTN device EUI.
 
 Options:
-  -i, --ttn-app-id TEXT           [required]
-  -k, --access-key-file FILENAME  [required]
-  --help                          Show this message and exit.
+  --help  Show this message and exit.
 ```
 
 ## clair-generate-fixtures-from-backup

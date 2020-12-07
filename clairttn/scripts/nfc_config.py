@@ -40,23 +40,24 @@ def _generate_qr_png(nfc_config, fila_name):
 
 
 @click.command()
-@click.option('-i', '--ttn-app-id', required=True)
-@click.option('-k', '--access-key-file', required=True, type=click.File())
-@click.argument("device-eui")
+@click.argument("ttn-app-id")
+@click.argument("access-key-file", type=click.File())
+@click.argument("device-eui", nargs=-1)
 def generate_nfc_config(ttn_app_id, access_key_file, device_eui):
     """Create NFC config files for a device registered in the TTN.
 
     \b
+    TTN_APP_ID is the id of the TTN application.
+    ACCESS_KEY_FILE is the file containing the access key of the TTN application.
     DEVICE_EUI is the TTN device EUI.
     """
     access_key = access_key_file.read().rstrip('\n')
 
-    try:
-        ttn_device = _get_ttn_device(ttn_app_id, access_key, device_eui)
-    except RuntimeError:
-        print("device {} not found".format(device_eui))
-        sys.exit(1)
+    for dev_eui in device_eui:
+        try:
+            ttn_device = _get_ttn_device(ttn_app_id, access_key, dev_eui)
+        except RuntimeError:
+            print("device {} not found".format(dev_eui))
 
-    nfc_config = _generate_nfc_config(ttn_device)
-
-    _generate_qr_png(nfc_config, "{}-nfc-config.png".format(device_eui))
+        nfc_config = _generate_nfc_config(ttn_device)
+        _generate_qr_png(nfc_config, "{}-nfc-config.png".format(dev_eui))
