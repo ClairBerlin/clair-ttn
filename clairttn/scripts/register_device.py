@@ -76,7 +76,7 @@ def _login(api_root):
     return r.data.attributes['key']
 
 
-def _create_node(api_root, device_id, ttn_device, protocol_id, model_id, owner_id):
+def _create_node(api_root, device_id, device_eui, protocol_id, model_id, owner_id):
     key = _login(api_root)
 
     api = jarequests.Api.config({
@@ -90,8 +90,8 @@ def _create_node(api_root, device_id, ttn_device, protocol_id, model_id, owner_i
         type = 'Node',
         id = device_id,
         attributes = {
-            "eui64": ttn_device["devEui"],
-            "alias": ttn_device["devEui"]
+            "eui64": device_eui,
+            "alias": device_eui
         },
         relationships = {
             "protocol": { "data": { "type": "Protocol", "id": protocol_id } },
@@ -124,4 +124,4 @@ def register_device_in_managair(api_root, device_eui, protocol_id, model_id, own
     """
     device_id = str(ers.ErsDeviceUUID(bytes.fromhex(device_eui)))
 
-    _create_node(api_root, device_id, ttn_device, protocol_id, model_id, owner_id)
+    _create_node(api_root, device_id, device_eui, protocol_id, model_id, owner_id)
