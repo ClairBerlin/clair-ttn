@@ -8,6 +8,7 @@ import clairttn.ers as ers
 import clairttn.clairchen as clairchen
 import dateutil.parser as dtparser
 
+
 UUID_MAP = {
     'clairfeatherprotored': 'c727b2f8-8377-d4cb-0e95-ac03200b8c93', # Clairchen Rot
     'clairprotoblack': '3b95a1b2-74e7-9e98-52c4-4acae441f0ae', # Clairchen Schwarz
@@ -21,12 +22,13 @@ UUID_MAP = {
     'ers-co2-lite-hpi-a81758fffe053cae': 'cd8e32d5-a17f-915e-9cb7-5d401a550312'
 }
 
+
 @click.command()
 @click.option('-b', '--base_url', required=True)
 @click.option('-k', '--access-key-file', envvar='CLAIR_TTN_ACCESS_KEY_FILE', required=True, type=click.File())
 @click.option('-p', '--payload-type', default='ers', show_default=True)
 @click.option('-d', '--duration', default='1d', show_default=True)
-def get_fixtures(base_url, access_key_file, payload_type, duration):
+def generate_fixtures(base_url, access_key_file, payload_type, duration):
 
     access_key = access_key_file.read().rstrip('\n')
 
@@ -67,6 +69,3 @@ def get_fixtures(base_url, access_key_file, payload_type, duration):
 
     fixtures.sort(key=lambda f: f['fields']['timestamp_s'])
     print(json.dumps(fixtures, indent=4))
-
-if __name__ == '__main__':
-    get_fixtures()
