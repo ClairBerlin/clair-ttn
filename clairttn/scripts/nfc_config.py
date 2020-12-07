@@ -15,7 +15,7 @@ def _get_ttn_device(ttn_app_id, access_key, device_eui):
 
 def _generate_nfc_config(ttn_device):
     app_eui = ttn_device.lorawan_device.app_eui.hex()
-    app_key = ttn_device.lorawan_device.app_key.hex()
+    app_key = ttn_device.lorawan_device.app_key.hex().upper()
 
     nfc_config = """\
 AppEui:{}
@@ -26,6 +26,7 @@ SplPer:356
 Co2Per:1
 TempPer:0
 SendPer:3
+VddPer:0
 QSize:5
 QOffset:false
 QPurge:true""".format(app_eui, app_key)
