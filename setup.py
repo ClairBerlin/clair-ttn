@@ -12,7 +12,8 @@ setup(
         'jsonapi_requests',
         'python-dateutil',
         'requests',
-        'pyqrcode'
+        'pyqrcode',
+        'pypng'
     ],
     entry_points='''
     [console_scripts]
