@@ -24,11 +24,17 @@ UUID_MAP = {
 
 
 @click.command()
-@click.option('-b', '--base_url', required=True)
-@click.option('-k', '--access-key-file', envvar='CLAIR_TTN_ACCESS_KEY_FILE', required=True, type=click.File())
 @click.option('-p', '--payload-type', default='ers', show_default=True)
 @click.option('-d', '--duration', default='1d', show_default=True)
+@click.argument('base_url')
+@click.argument('access-key-file', type=click.File())
 def generate_fixtures(base_url, access_key_file, payload_type, duration):
+    """Generate fixtures from the TTN's DB integration.
+
+    \b
+    BASE_URL is the base URL of the TTN's DB integration API.
+    ACCESS_KEY_FILE is the file containing the TTN app's access key.
+    """
 
     access_key = access_key_file.read().rstrip('\n')
 
@@ -36,6 +42,8 @@ def generate_fixtures(base_url, access_key_file, payload_type, duration):
         'Accept': 'application/json',
         'Authorization': "key {}".format(access_key)
     }
+
+    base_url.rstrip('/')
 
     url = "{}/api/v2/query".format(base_url)
 
