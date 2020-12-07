@@ -23,25 +23,28 @@ def _create_ttn_device(device_eui, app_eui):
 
 
 @click.command()
-@click.option('-i', '--ttn-app-id', required=True)
-@click.option('-k', '--access-key-file', required=True, type=click.File())
-@click.argument("device-eui")
+@click.argument("app-id")
+@click.argument("access-key-file", type=click.File())
 @click.argument("app-eui")
-def register_device_in_ttn(ttn_app_id, access_key_file, device_eui, app_eui):
-    """Register a Clair TTN node in the TTN.
+@click.argument("device-eui", nargs=-1)
+def register_device_in_ttn(app_id, access_key_file, app_eui, device_eui):
+    """Register Clair TTN nodes in the TTN.
 
     \b
-    DEVICE_EUI is the TTN device EUI.
+    APP_ID is the TTN application id.
+    ACCESS_KEY_FILE is the file that contains the access key of the TTN application.
     APP_EUI is the TTN app EUI.
+    DEVICE_EUI is the TTN device EUI.
     """
 
     access_key = access_key_file.read().rstrip('\n')
-    applicationClient = ttn.HandlerClient(ttn_app_id, access_key).application()
+    application_client = ttn.HandlerClient(app_id, access_key).application()
 
-    device_id = str(ers.ErsDeviceUUID(bytes.fromhex(device_eui)))
-    ttn_device = _create_ttn_device(device_eui, app_eui)
+    for dev_eui in device_eui:
+        device_id = str(ers.ErsDeviceUUID(bytes.fromhex(dev_eui)))
+        ttn_device = _create_ttn_device(dev_eui, app_eui)
 
-    applicationClient.register_device(device_id, ttn_device)
+        application_client.register_device(device_id, ttn_device)
 
 
 class _TokenAuth(requests.auth.AuthBase):
@@ -76,9 +79,7 @@ def _login(api_root):
     return r.data.attributes['key']
 
 
-def _create_node(api_root, device_id, device_eui, protocol_id, model_id, owner_id):
-    key = _login(api_root)
-
+def _create_node(api_root, key, device_eui, alias_prefix, protocol_id, model_id, owner_id):
     api = jarequests.Api.config({
         'API_ROOT': api_root,
         'AUTH': _TokenAuth(key)
@@ -86,12 +87,14 @@ def _create_node(api_root, device_id, device_eui, protocol_id, model_id, owner_i
 
     nodes_endpoint = api.endpoint('nodes')
 
+    device_id = str(ers.ErsDeviceUUID(bytes.fromhex(device_eui)))
+
     node_object = jarequests.JsonApiObject(
         type = 'Node',
         id = device_id,
         attributes = {
             "eui64": device_eui,
-            "alias": device_eui
+            "alias": "{}{}".format(alias_prefix, device_eui)
         },
         relationships = {
             "protocol": { "data": { "type": "Protocol", "id": protocol_id } },
@@ -105,23 +108,26 @@ def _create_node(api_root, device_id, device_eui, protocol_id, model_id, owner_i
 
 @click.command()
 @click.option('-r', '--api-root', default='http://localhost:8888/api/v1/', show_default=True)
-@click.argument("device-eui")
+@click.option('-a', '--alias-prefix')
 @click.argument("protocol-id")
 @click.argument("model-id")
 @click.argument("owner-id")
-def register_device_in_managair(api_root, device_eui, protocol_id, model_id, owner_id):
-    """Register a Clair TTN node in the managair.
+@click.argument("device-eui", nargs=-1)
+def register_device_in_managair(api_root, alias_prefix, protocol_id, model_id, owner_id, device_eui):
+    """Register Clair TTN nodes in the managair.
 
     \b
-    DEVICE_EUI is the TTN device EUI.
     PROTOCOL_ID is the id of the (existing) node protocol in the managair.
     MODEL_ID is the id of the (existing) node model in the managair.
     OWNER_ID is the id of the (existing) owner organization in the managair.
+    DEVICE_EUI is the TTN device EUI.
 
     You will be prompted to enter usename and password of an account which
     needs to be a member of the owner organization. The account needs to have
     the right to create a node.
     """
-    device_id = str(ers.ErsDeviceUUID(bytes.fromhex(device_eui)))
 
-    _create_node(api_root, device_id, device_eui, protocol_id, model_id, owner_id)
+    key = _login(api_root)
+
+    for dev_eui in device_eui:
+        _create_node(api_root, key, dev_eui, alias_prefix, protocol_id, model_id, owner_id)
