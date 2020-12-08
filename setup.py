@@ -17,7 +17,7 @@ setup(
     ],
     entry_points='''
     [console_scripts]
-    clairttn=clairttn.scripts.clairttn:main
+    clair-ttn=clairttn.scripts.clairttn:main
     clair-generate-fixtures-from-backup=clairttn.scripts.generate_fixtures:generate_fixtures
     clair-register-device-in-ttn=clairttn.scripts.register_device:register_device_in_ttn
     clair-register-device-in-managair=clairttn.scripts.register_device:register_device_in_managair

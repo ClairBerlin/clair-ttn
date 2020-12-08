@@ -6,13 +6,9 @@ Technically speaking, Clair-TTN is a service in the [Clair Stack](https://github
 
 The application for The Things Network (TTN) can be run in the following modes:
 
-* Clairchen forwarding: subscribes to uplink messages of Clairchen nodes,
-  decodes them and forwards measurement samples to the ingest endpoint of the
-  backend API.
+* Clairchen forwarding: subscribes to uplink messages of Clairchen nodes, decodes them and forwards measurement samples to the ingest endpoint of the backend API.
 * ERS forwarding: does the sampe for ERS nodes.
-* ERS configuration: subscribes to uplink messages of ERS nodes and sends
-  downlink messages to update the sensor's parameters to meet the TTN's airtime
-  constraints.
+* ERS configuration: subscribes to uplink messages of ERS nodes and sends downlink messages to update the sensor's parameters to meet the TTN's airtime constraints.
 * OY1012 forwarding: forwarding for Talkpool OY1012.
 
 In addition to the TTN application, this repository also contains a couple of TTN device management tools documented below.
@@ -22,16 +18,23 @@ In addition to the TTN application, this repository also contains a couple of TT
 ```
 python3 -m venv env
 . env/bin/activate
+pip install wheel
 pip install --editable .
 ```
 
-Afterwards, the `clairttn` command should be available
-([source](https://click.palletsprojects.com/en/7.x/setuptools/#testing-the-script)).
+Afterwards, the `clairttn` command should be available ([source](https://click.palletsprojects.com/en/7.x/setuptools/#testing-the-script)).
 
 ## Usage
 
 ```
-Usage: clairttn [OPTIONS]
+Usage: clair-ttn [OPTIONS]
+
+  Clair TTN application that can be run in one of the following modes:
+
+  * Clairchen forwarding
+  * ERS forwarding
+  * ERS configuration
+  * OY1012 forwarding
 
 Options:
   -i, --app-id TEXT               [default: clair-berlin-ers-co2]
