@@ -34,6 +34,14 @@ HANDLERS = [
 @click.option('-m', '--mode', type=click.Choice(HANDLERS), envvar="CLAIR_MODE", required=True)
 @click.option('-r', '--api-root', envvar="CLAIR_API_ROOT", default='http://localhost:8888/ingest/v1/', show_default=True)
 def main(app_id, access_key_file, mode, api_root):
+    """Clair TTN application that can be run in one of the following modes:
+
+        \b
+        * Clairchen forwarding
+        * ERS forwarding
+        * ERS configuration
+        * OY1012 forwarding
+    """
     signal.signal(signal.SIGINT, handle_signal)
 
     access_key = access_key_file.read().rstrip('\n')

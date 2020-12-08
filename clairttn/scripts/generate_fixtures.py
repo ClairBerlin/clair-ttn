@@ -30,10 +30,10 @@ UUID_MAP = {
 @click.argument('base_url')
 @click.argument('access-key-file', type=click.File())
 def generate_fixtures(base_url, access_key_file, payload_type, duration):
-    """Generate fixtures from the TTN's DB integration.
+    """Generate fixtures from the TTN's Storage integration.
 
     \b
-    BASE_URL is the base URL of the TTN's DB integration API.
+    BASE_URL is the base URL of the TTN's Storage integration API.
     ACCESS_KEY_FILE is the file containing the TTN app's access key.
     """
 
