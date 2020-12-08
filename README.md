@@ -15,6 +15,8 @@ The application for The Things Network (TTN) can be run in the following modes:
   constraints.
 * OY1012 forwarding: forwarding for Talkpool OY1012.
 
+In addition to the TTN application, this repository also contains a couple of TTN device management tools documented below.
+
 ## Development Setup
 
 ```
@@ -48,7 +50,7 @@ be specified as the following environment variables:
 * mode: `CLAIR_MODE`
 * api root: `CLAIR_API_ROOT`
 
-# Management Tools
+# TTN Device Management Tools
 
 ## clair-register-device-in-ttn
 
