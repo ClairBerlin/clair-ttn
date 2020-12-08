@@ -61,8 +61,7 @@ Registering a TTN node is a three-step process:
 
 * TTN
   1. Register TTN device using `clair-register-device-in-ttn`.
-  2. Device configuration using `clair-generate-nfc-config` and the [NFC Tools
-  app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html).
+  2. Device configuration using `clair-generate-nfc-config` and the [NFC Tools app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html).
 * Register managair node using `clair-register-device-in-managair`.
 
 Note that, currently, only the [ERS CO2](https://www.elsys.se/en/ers-co2/) and [ERS CO2 Lite](https://www.elsys.se/en/ers-co2-lite/) sensors by [ELSYS](https://www.elsys.se/) are supported by these tools.
@@ -88,8 +87,7 @@ Options:
 
 ### clair-generate-nfc-config
 
-`clair-generate-nfc-config` retrieves the application EUI and the device-specific application key from the TTN application identified by `APP_ID`, generates NFC settings according to [ELSYS's specification](https://www.elsys.se/en/elsys-nfc-settings-specification/) and writes them both to a text file and a PNG QR code which can be read using the [NFC Tools
-  app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html).
+`clair-generate-nfc-config` retrieves the application EUI and the device-specific application key from the TTN application identified by `APP_ID`, generates NFC settings according to [ELSYS's specification](https://www.elsys.se/en/elsys-nfc-settings-specification/) and writes them both to a text file and a PNG QR code which can be read using the [NFC Tools app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html).
 
 ```
 Usage: clair-generate-nfc-config [OPTIONS] APP_ID ACCESS_KEY_FILE
