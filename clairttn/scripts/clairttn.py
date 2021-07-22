@@ -98,5 +98,7 @@ def main(app_id, access_key_file, mode, api_root, stack):
 
     while not signal_received:
         time.sleep(1)
+        with open('/tmp/clair-ttn-active-threads', 'w') as f:
+            f.write("{}\n".format(threading.active_count()))
 
     node_handler.disconnect_and_close()
