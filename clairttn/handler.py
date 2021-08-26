@@ -146,6 +146,7 @@ class _SampleForwardingHandler(_Handler):
             {
                 "API_ROOT": api_root,
                 "TIMEOUT": 5,  # we observed extreme timeouts with Django in DEBUG mode
+                "RETRIES": 3,
             }
         )
         self._sample_endpoint = api.endpoint("ingest")
@@ -185,7 +186,12 @@ class _SampleForwardingHandler(_Handler):
             attributes=sample_attributes,
             relationships={"node": {"data": {"type": "Node", "id": str(device_uuid)}}},
         )
+        logging.debug("POSTing sample ingest request %s", sample_object)
 
+        logging.debug(
+            "POSTing ingestion request to %s",
+            self._sample_endpoint.requests._build_absolute_url("ingest"),
+        )
         response = self._sample_endpoint.post(object=sample_object)
         logging.debug("response: {}".format(response))
 
