@@ -4,11 +4,11 @@ from setuptools import setup, find_packages
 
 setup(
     name='clairttn',
-    version='0.1',
+    version='0.2',
     packages=find_packages(),
     install_requires=[
-        'Click',
-        'ttn',
+        'click',
+        'paho-mqtt',
         'jsonapi_requests',
         'python-dateutil',
         'requests',

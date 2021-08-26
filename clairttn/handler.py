@@ -1,9 +1,10 @@
-import ttn
+import paho.mqtt.client as mqtt
 import logging
 import traceback
 import base64
 import dateutil.parser as dtparser
 import datetime as dt
+import json
 import jsonapi_requests as jarequests
 import clairttn.types as types
 import clairttn.clairchen as clairchen
@@ -11,43 +12,129 @@ import clairttn.ers as ers
 import clairttn.oy1012 as oy1012
 
 
+class Rx_message:
+    """Core parts of the TTN message received from a sensor"""
+
+    def __init__(self, raw_data, device_eui, rx_datetime, mcs):
+        self.raw_data = raw_data
+        self.device_eui = device_eui
+        self.rx_datetime = rx_datetime
+        self.mcs = mcs
+
+
 class _Handler:
     def __init__(self, app_id, access_key):
-        logging.debug("app id: {}".format(app_id))
+        logging.debug("Application ID: %s", app_id)
 
-        ttnHandler = ttn.HandlerClient(app_id, access_key)
-        self._mqtt_client = ttnHandler.data()
+        # Use fixed TTNv2 broker for now.
+        self._broker_host = "eu.thethings.network"
+        self._broker_port = 1883
+        self._sub_topics = app_id + "/devices/+/up"
+        self._mqtt_client = mqtt.Client(
+            client_id="Clair-Berlin",
+            clean_session=False,
+            userdata=None,
+            protocol=mqtt.MQTTv311,
+            transport="tcp",
+        )
+        self._mqtt_client.username_pw_set(username=app_id, password=access_key)
 
-        def _uplink_callback(message, client):
-            logging.debug("uplink message received from {}".format(message.dev_id))
-            logging.debug(str(message))
+        def on_connect(client, _ununsed_userdata, _unused_flags, rc):
+            del _ununsed_userdata
+            del _unused_flags
+            if rc == 0:
+                logging.info("Connect success!")
+                client.subscribe(self._sub_topics)
+                logging.debug("Subscribed to topic %s", self._sub_topics)
+            else:
+                logging.error("Failed to connect, return code %d", rc)
 
-            if not message.payload_raw:
+        def on_message(_unused_client, _unused_userdata, message):
+            """Receive, decode and forward a TTN uplink message.
+
+            Args:
+                _unused_client (paho mqqt_client): Callback mqqq_client instance. Unused
+                _unused_userdata ([type]): Unused
+                message (bytes): Received mqqt message as byte-array.
+            """
+            del _unused_client
+            del _unused_userdata
+            topic = message.topic
+            # Decode UTF-8 bytes to Unicode,
+            mqtt_payload = message.payload.decode("utf8")
+            # Parse the string into a JSON object.
+            ttn_rxmsg = json.loads(mqtt_payload)
+            logging.debug("Uplink message received on topic %s", topic)
+            logging.debug("Message payload: %s", ttn_rxmsg)
+
+            if not ttn_rxmsg["payload_raw"]:
                 logging.warning("message without payload, skipping...")
                 return
+            try:
+                device_eui = bytes.fromhex(ttn_rxmsg["hardware_serial"])
+                logging.info("device eui: %s", device_eui.hex())
+                del ttn_rxmsg[
+                    "hardware_serial"
+                ]  # Delete processed entries to avoid redundnacy
+
+                device_id = ttn_rxmsg["dev_id"]
+                logging.info("device name: %s", device_id)
+                del ttn_rxmsg["dev_id"]
+
+                raw_payload = ttn_rxmsg["payload_raw"]
+                raw_data = base64.b64decode(raw_payload)
+                logging.debug("raw data: %s", raw_data.hex("-").upper())
+                del ttn_rxmsg["payload_raw"]
+
+                metadata = ttn_rxmsg["metadata"]
+
+                rx_datetime = dtparser.parse(metadata["time"])
+                logging.debug("received at: %s", rx_datetime.isoformat())
+                del ttn_rxmsg["metadata"]["time"]
+
+                lora_rate = metadata["data_rate"]
+                del ttn_rxmsg["metadata"]["data_rate"]
+
+            except Exception as e1:
+                logging.error(
+                    "Exception decoding the MQTT message: %s \n error %s", ttn_rxmsg, e1
+                )
 
             try:
-                payload = base64.b64decode(message.payload_raw)
-                logging.debug("payload: {}".format(payload.hex('-').upper()))
+                mcs = types.LoRaWanMcs[lora_rate]
+            except KeyError:
+                logging.warning("message without data rate, assuming simulated uplink")
+                mcs = types.LoRaWanMcs.SF9BW125
+            logging.info("MCS: %s", mcs)
 
-                device_id = bytes.fromhex(message.hardware_serial)
-                logging.debug("device_id: {}".format(device_id.hex()))
+            rx_message = Rx_message(raw_data, device_eui, rx_datetime, mcs)
 
-                self._handle_message(payload, device_id, message)
-
-            except Exception as e:
-                logging.error("exception during message handling: {}".format(e))
+            # Decoding the message is specific to each node type.
+            # This is handled by a node-specific subclass.
+            try:
+                self._handle_message(rx_message, ttn_rxmsg)
+            except Exception as e2:
+                logging.error("exception during message handling: %s", e2)
                 logging.error(traceback.format_exc())
 
-        self._mqtt_client.set_uplink_callback(_uplink_callback)
+        # Attach callbacks to client.
+        self._mqtt_client.on_message = on_message
+        self._mqtt_client.on_connect = on_connect
 
     def connect(self):
-        self._mqtt_client.connect()
+        logging.debug("Connecting to the TTN MQTT broker at %s", self._broker_host)
+        self._mqtt_client.connect_async(host=self._broker_host, port=self._broker_port)
 
-    def close(self):
-        self._mqtt_client.close()
+        self._mqtt_client.loop_start()
+        logging.debug("Message handling loop started.")
 
-    def _handle_message(self, payload, device_id, message):
+    def disconnect_and_close(self):
+        self._mqtt_client.loop_stop()
+        logging.debug("Message handling loop stopped.")
+        self._mqtt_client.disconnect()
+        logging.debug("Disconnected from %s", self._broker_address)
+
+    def _handle_message(self, rx_message, ttn_rxmsg):
         raise NotImplementedError("needs to be implemented by subclass")
 
 
@@ -55,21 +142,20 @@ class _SampleForwardingHandler(_Handler):
     def __init__(self, app_id, access_key, api_root):
         super().__init__(app_id, access_key)
 
-        api = jarequests.Api.config({
-            'API_ROOT': api_root,
-            'TIMEOUT': 5 # we observed extreme timeouts with Django in DEBUG mode
-        })
-        self._sample_endpoint = api.endpoint('ingest')
+        api = jarequests.Api.config(
+            {
+                "API_ROOT": api_root,
+                "TIMEOUT": 5,  # we observed extreme timeouts with Django in DEBUG mode
+            }
+        )
+        self._sample_endpoint = api.endpoint("ingest")
 
-    def _handle_message(self, payload, device_id, message):
-        rx_datetime = dtparser.parse(message.metadata.time)
-        logging.debug("rx_datetime: {}".format(rx_datetime))
-
+    def _handle_message(self, rx_message, ttn_rxmsg):
         uuid_class = self._get_uuid_class()
-        device_uuid = uuid_class(device_id)
-        logging.debug("device_uuid: {}".format(device_uuid))
+        device_uuid = uuid_class(rx_message.device_eui)
+        logging.debug("device_uuid: %s", device_uuid)
 
-        samples = self._decode_payload(payload, rx_datetime, message)
+        samples = self._decode_payload(rx_message)
         for sample in samples:
             # the ingest enpdoint expects the rel. humidity to be an integer
             if sample.relative_humidity:
@@ -79,7 +165,7 @@ class _SampleForwardingHandler(_Handler):
     def _get_uuid_class(self):
         raise NotImplementedError("needs to be implemented by subclass")
 
-    def _decode_payload(self, payload, rx_datetime, message):
+    def _decode_payload(self, rx_message):
         raise NotImplementedError("needs to be implemented by subclass")
 
     def _post_sample(self, sample, device_uuid):
@@ -87,7 +173,7 @@ class _SampleForwardingHandler(_Handler):
 
         sample_attributes = {
             "timestamp_s": sample.timestamp.value,
-            "co2_ppm": sample.co2.value
+            "co2_ppm": sample.co2.value,
         }
         if sample.temperature:
             sample_attributes["temperature_celsius"] = sample.temperature.value
@@ -95,16 +181,9 @@ class _SampleForwardingHandler(_Handler):
             sample_attributes["rel_humidity_percent"] = sample.relative_humidity.value
 
         sample_object = jarequests.JsonApiObject(
-            type = 'Sample',
-            attributes = sample_attributes,
-            relationships = {
-                "node": {
-                    "data": {
-                        "type": "Node",
-                        "id": str(device_uuid)
-                    }
-                }
-            }
+            type="Sample",
+            attributes=sample_attributes,
+            relationships={"node": {"data": {"type": "Node", "id": str(device_uuid)}}},
         )
 
         response = self._sample_endpoint.post(object=sample_object)
@@ -114,83 +193,71 @@ class _SampleForwardingHandler(_Handler):
 class ClairchenForwardingHandler(_SampleForwardingHandler):
     """A handler for Clairchen devices which forwards samples to the backend API"""
 
-    def __init__(self, app_id: str, access_key: str, api_root: str):
-        super().__init__(app_id, access_key, api_root)
-
     def _get_uuid_class(self):
         return clairchen.ClairchenDeviceUUID
 
-    def _decode_payload(self, payload, rx_datetime, message):
-        try:
-            mcs = types.LoRaWanMcs[message.metadata.data_rate]
-        except:
-            logging.warning("message without data rate, assuming simulated uplink")
-            mcs = types.LoRaWanMcs.SF9BW125
-        return clairchen.decode_payload(payload, rx_datetime, mcs)
+    def _decode_payload(self, rx_message):
+        return clairchen.decode_payload(
+            rx_message.raw_data, rx_message.rx_datetime, rx_message.mcs
+        )
 
 
 class ErsForwardingHandler(_SampleForwardingHandler):
     """A handler for Elsys ERS devices which forwards samples to the backend API"""
 
-    def __init__(self, app_id: str, access_key: str, api_root: str):
-        super().__init__(app_id, access_key, api_root)
-
     def _get_uuid_class(self):
         return ers.ErsDeviceUUID
 
-    def _decode_payload(self, payload, rx_datetime, message):
-        return ers.decode_payload(payload, rx_datetime)
+    def _decode_payload(self, rx_message):
+        return ers.decode_payload(rx_message.raw_data, rx_message.rx_datetime)
 
 
 class Oy1012ForwardingHandler(_SampleForwardingHandler):
     """A handler for Talkpool OY1012 devices which forwards samples to the backend API"""
 
-    def __init__(self, app_id: str, access_key: str, api_root: str):
-        super().__init__(app_id, access_key, api_root)
-
     def _get_uuid_class(self):
         return oy1012.Oy1012DeviceUUID
 
-    def _decode_payload(self, payload, rx_datetime, message):
-        return oy1012.decode_payload(payload, rx_datetime)
+    def _decode_payload(self, rx_message):
+        return oy1012.decode_payload(rx_message.raw_data, rx_message.rx_datetime)
 
 
 class ErsConfigurationHandler(_Handler):
     """A handler for Elsys ERS devices which sends parameter downlink messages"""
 
-    def _handle_message(self, payload, device_id, message):
-        logging.debug("uplink message received from {}".format(message.dev_id))
-        logging.debug(str(message))
-
-        if not self._is_conforming(payload, message):
-            logging.debug("message is not conforming to protocol payload specification")
-
-            mcs = types.LoRaWanMcs[message.metadata.data_rate]
-            parameter_set = ers.PARAMETER_SETS[mcs]
-            logging.debug("new parameter set: {}".format(parameter_set))
-
-            payload = ers.encode_parameter_set(parameter_set)
-            b64_payload = str(base64.b64encode(payload), 'ascii')
-
-            # ERS downlink payloads are sent on the configured port + 1
-            port = message.port + 1
-
-            logging.debug("sending downlink payload {} ({}) to port {}".format(payload.hex(), b64_payload, port))
-
-            self._mqtt_client.send(message.dev_id, b64_payload, port, conf=False)
-
-    def _is_conforming(self, payload, message):
-        measurement_count = len(ers.decode_payload(payload, dt.datetime.now()))
-        logging.debug("measurement count: {}".format(measurement_count))
-
-        if not (hasattr(message, 'metadata') and hasattr(message.metadata, 'data_rate')):
-            logging.warning("message without data_rate, assuming simulated uplink message")
-            return True
-
-        mcs = types.LoRaWanMcs[message.metadata.data_rate]
+    def _is_conforming(self, raw_data, mcs):
+        measurement_count = len(ers.decode_payload(raw_data, dt.datetime.now()))
+        logging.debug("measurement count: %d", measurement_count)
         logging.debug("mcs: {}".format(mcs))
 
         protocol_payload_specification = ers.PROTOCOL_PAYLOAD_SPECIFICATION[mcs]
         expected_measurement_count = protocol_payload_specification.measurement_count
 
         return measurement_count == expected_measurement_count
+
+    def _handle_message(self, rx_message, ttn_rxmsg):
+        logging.debug("uplink message received from %s", rx_message.device_eui)
+        rx_port = ttn_rxmsg.get("port", 5)  # Default Elsys ERS uplink port is 5.
+
+        if not self._is_conforming(raw_data=rx_message.raw_data, mcs=rx_message.mcs):
+            logging.debug("message is not conforming to protocol payload specification")
+
+            parameter_set = ers.PARAMETER_SETS[mcs]
+            logging.debug("new parameter set: {}".format(parameter_set))
+
+            payload = ers.encode_parameter_set(parameter_set)
+            b64_payload = str(base64.b64encode(payload), "ascii")
+
+            # ERS downlink payloads are sent on the configured port + 1
+            tx_port = rx_port + 1
+
+            logging.debug(
+                "sending downlink payload %s (%s) to port %d",
+                payload.hex(),
+                b64_payload,
+                tx_port,
+            )
+
+            self._mqtt_client.send(
+                rx_message.device_eui, b64_payload, tx_port, conf=False
+            )
