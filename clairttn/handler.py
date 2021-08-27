@@ -49,9 +49,7 @@ class _Handler:
         )
         self._mqtt_client.username_pw_set(username=app_id, password=access_key)
 
-        def on_connect(client, _ununsed_userdata, _unused_flags, rc):
-            del _ununsed_userdata
-            del _unused_flags
+        def on_connect(client, _userdata, _flags, rc):
             if rc == 0:
                 logging.info("Connect success!")
                 client.subscribe(self._sub_topics)
@@ -59,7 +57,7 @@ class _Handler:
             else:
                 logging.error("Failed to connect, return code %d", rc)
 
-        def on_message(_unused_client, _unused_userdata, message):
+        def on_message(_client, _userdata, message):
             """Receive, decode and forward a TTN uplink message.
 
             Args:
@@ -67,9 +65,7 @@ class _Handler:
                 _unused_userdata ([type]): Unused
                 message (bytes): Received mqqt message as byte-array.
             """
-            del _unused_client
-            del _unused_userdata
-
+            
             topic = message.topic
             # Decode UTF-8 bytes to Unicode,
             mqtt_payload = message.payload.decode("utf8")
@@ -227,12 +223,6 @@ class _SampleForwardingHandler(_Handler):
             type="Sample",
             attributes=sample_attributes,
             relationships={"node": {"data": {"type": "Node", "id": str(device_uuid)}}},
-        )
-        logging.debug("POSTing sample ingest request %s", sample_object)
-
-        logging.debug(
-            "POSTing ingestion request to %s",
-            self._sample_endpoint.requests._build_absolute_url("ingest"),
         )
         response = self._sample_endpoint.post(object=sample_object)
         logging.debug("response: {}".format(response))

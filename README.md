@@ -54,6 +54,7 @@ be specified as the following environment variables:
 * access key: `CLAIR_TTN_ACCESS_KEY_FILE`
 * mode: `CLAIR_MODE`
 * api root: `CLAIR_API_ROOT`
+* stack: `CLAIR_TTN_STACK`
 
 # TTN Node Management Tools
 

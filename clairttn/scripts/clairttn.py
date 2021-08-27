@@ -15,8 +15,7 @@ logger.addHandler(logging.StreamHandler())
 signal_received = False
 
 
-def handle_signal(signal_number, _unused_stack_frame):
-    del _unused_stack_frame
+def handle_signal(signal_number, _stack_frame):
     logging.debug("signal {} received".format(signal_number))
     global signal_received
     signal_received = True
@@ -52,7 +51,13 @@ STACKS = ["ttn-v2", "ttn-v3"]
     default="http://localhost:8888/ingest/v1/",
     show_default=True,
 )
-@click.option("-s", "--stack", type=click.Choice(STACKS), default="ttn-v2")
+@click.option(
+    "-s",
+    "--stack",
+    type=click.Choice(STACKS),
+    envvar="CLAIR_TTN_STACK",
+    default="ttn-v2",
+)
 def main(app_id, access_key_file, mode, api_root, stack):
     """Clair TTN application that can be run in one of the following modes:
 
