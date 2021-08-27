@@ -13,7 +13,10 @@ setup(
         'python-dateutil',
         'requests',
         'pyqrcode',
-        'pypng'
+        'pypng',
+        # Pin transitive dependency of the jsonapi_requests library until fixed;
+        # See https://github.com/socialwifi/jsonapi-requests/issues/53
+        'tenacity==7.0' 
     ],
     entry_points='''
     [console_scripts]
