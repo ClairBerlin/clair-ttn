@@ -15,21 +15,31 @@ import clairttn.oy1012 as oy1012
 class Rx_message:
     """Core parts of the TTN message received from a sensor"""
 
-    def __init__(self, raw_data, device_eui, rx_datetime, mcs):
+    def __init__(self, raw_data, device_eui, rx_datetime, rx_port, mcs):
         self.raw_data = raw_data
         self.device_eui = device_eui
         self.rx_datetime = rx_datetime
+        self.rx_port = rx_port
         self.mcs = mcs
 
 
 class _Handler:
-    def __init__(self, app_id, access_key):
+    def __init__(self, app_id, access_key, stack):
         logging.debug("Application ID: %s", app_id)
 
-        # Use fixed TTNv2 broker for now.
-        self._broker_host = "eu.thethings.network"
+        self.stack = stack
+        if stack == "ttn-v2":
+            logging.info("Configuring TTN Stack V2")
+            self._broker_host = "eu.thethings.network"
+            self._sub_topics = app_id + "/devices/+/up"
+        elif stack == "ttn-v3":
+            logging.info("Configuring TTN Stack V3")
+            self._broker_host = "eu1.cloud.thethings.network"
+            self._sub_topics = "v3/" + app_id + "@ttn/devices/+/up"
+        else:
+            raise AssertionError("Code path should not be reachable.")
+
         self._broker_port = 1883
-        self._sub_topics = app_id + "/devices/+/up"
         self._mqtt_client = mqtt.Client(
             client_id="Clair-Berlin",
             clean_session=False,
@@ -59,6 +69,7 @@ class _Handler:
             """
             del _unused_client
             del _unused_userdata
+
             topic = message.topic
             # Decode UTF-8 bytes to Unicode,
             mqtt_payload = message.payload.decode("utf8")
@@ -67,52 +78,20 @@ class _Handler:
             logging.debug("Uplink message received on topic %s", topic)
             logging.debug("Message payload: %s", ttn_rxmsg)
 
-            if not ttn_rxmsg["payload_raw"]:
-                logging.warning("message without payload, skipping...")
-                return
-            try:
-                device_eui = bytes.fromhex(ttn_rxmsg["hardware_serial"])
-                logging.info("device eui: %s", device_eui.hex())
-                del ttn_rxmsg[
-                    "hardware_serial"
-                ]  # Delete processed entries to avoid redundnacy
-
-                device_id = ttn_rxmsg["dev_id"]
-                logging.info("device name: %s", device_id)
-                del ttn_rxmsg["dev_id"]
-
-                raw_payload = ttn_rxmsg["payload_raw"]
-                raw_data = base64.b64decode(raw_payload)
-                logging.debug("raw data: %s", raw_data.hex("-").upper())
-                del ttn_rxmsg["payload_raw"]
-
-                metadata = ttn_rxmsg["metadata"]
-
-                rx_datetime = dtparser.parse(metadata["time"])
-                logging.debug("received at: %s", rx_datetime.isoformat())
-                del ttn_rxmsg["metadata"]["time"]
-
-                lora_rate = metadata["data_rate"]
-                del ttn_rxmsg["metadata"]["data_rate"]
-
-            except Exception as e1:
-                logging.error(
-                    "Exception decoding the MQTT message: %s \n error %s", ttn_rxmsg, e1
-                )
-
-            try:
-                mcs = types.LoRaWanMcs[lora_rate]
-            except KeyError:
-                logging.warning("message without data rate, assuming simulated uplink")
-                mcs = types.LoRaWanMcs.SF9BW125
-            logging.info("MCS: %s", mcs)
-
-            rx_message = Rx_message(raw_data, device_eui, rx_datetime, mcs)
-
+            if stack == "ttn-v2":
+                if not ttn_rxmsg["payload_raw"]:
+                    logging.warning("message without payload, skipping...")
+                    return
+                rx_message = self._on_message_v2(ttn_rxmsg)
+            else:  # ttn-v3
+                if not ttn_rxmsg["uplink_message"]["frm_payload"]:
+                    logging.warning("message without payload, skipping...")
+                    return
+                rx_message = self._on_message_v3(ttn_rxmsg)
             # Decoding the message is specific to each node type.
             # This is handled by a node-specific subclass.
             try:
-                self._handle_message(rx_message, ttn_rxmsg)
+                self._handle_message(rx_message)
             except Exception as e2:
                 logging.error("exception during message handling: %s", e2)
                 logging.error(traceback.format_exc())
@@ -134,13 +113,76 @@ class _Handler:
         self._mqtt_client.disconnect()
         logging.debug("Disconnected from %s", self._broker_address)
 
-    def _handle_message(self, rx_message, ttn_rxmsg):
+    def _on_message_v2(self, ttn_rxmsg):
+        try:
+            device_eui = bytes.fromhex(ttn_rxmsg["hardware_serial"])
+            logging.info("device eui: %s", device_eui.hex())
+
+            device_id = ttn_rxmsg["dev_id"]
+            logging.info("device name: %s", device_id)
+
+            raw_payload = ttn_rxmsg["payload_raw"]
+            raw_data = base64.b64decode(raw_payload)
+            logging.debug("raw data: %s", raw_data.hex("-").upper())
+
+            metadata = ttn_rxmsg["metadata"]
+            rx_datetime = dtparser.parse(metadata["time"])
+            logging.debug("received at: %s", rx_datetime.isoformat())
+
+            rx_port = ttn_rxmsg.get("port", 5)  # Default Elsys ERS uplink port is 5.
+            lora_rate = metadata["data_rate"]
+
+        except Exception as e1:
+            logging.error(
+                "Exception decoding the MQTT message: %s \n error %s", ttn_rxmsg, e1
+            )
+        try:
+            mcs = types.LoRaWanMcs[lora_rate]
+        except KeyError:
+            logging.warning("message without data rate, assuming simulated uplink")
+            mcs = types.LoRaWanMcs.SF9BW125
+        logging.info("MCS: %s", mcs)
+        return Rx_message(raw_data, device_eui, rx_datetime, rx_port, mcs)
+
+    def _on_message_v3(self, ttn_rxmsg):
+        try:
+            device_ids = ttn_rxmsg["end_device_ids"]
+            device_eui = bytes.fromhex(device_ids["dev_eui"])
+            logging.info("device eui: %s", device_eui.hex())
+
+            device_id = device_ids["device_id"]
+            logging.info("device name: %s", device_id)
+
+            uplink_message = ttn_rxmsg["uplink_message"]
+            raw_payload = uplink_message["frm_payload"]
+            raw_data = base64.b64decode(raw_payload)
+            logging.debug("raw data: %s", raw_data.hex("-").upper())
+
+            rx_datetime = dtparser.parse(uplink_message["received_at"])
+            logging.debug("received at: %s", rx_datetime.isoformat())
+
+            # Default Elsys ERS uplink port is 5.
+            rx_port = uplink_message.get("f_port", 5)
+            lora_rate = uplink_message["settings"]["data_rate_index"]
+        except Exception as e1:
+            logging.error(
+                "Exception decoding the MQTT message: %s \n error %s", ttn_rxmsg, e1
+            )
+        try:
+            mcs = types.DATA_RATE_INDEX[lora_rate]
+        except KeyError:
+            logging.warning("message without data rate, assuming simulated uplink")
+            mcs = types.LoRaWanMcs.SF9BW125
+        logging.info("MCS: %s", mcs)
+        return Rx_message(raw_data, device_eui, rx_datetime, rx_port, mcs)
+
+    def _handle_message(self, rx_message):
         raise NotImplementedError("needs to be implemented by subclass")
 
 
 class _SampleForwardingHandler(_Handler):
-    def __init__(self, app_id, access_key, api_root):
-        super().__init__(app_id, access_key)
+    def __init__(self, app_id, access_key, api_root, stack):
+        super().__init__(app_id, access_key, stack)
 
         api = jarequests.Api.config(
             {
@@ -151,7 +193,7 @@ class _SampleForwardingHandler(_Handler):
         )
         self._sample_endpoint = api.endpoint("ingest")
 
-    def _handle_message(self, rx_message, ttn_rxmsg):
+    def _handle_message(self, rx_message):
         uuid_class = self._get_uuid_class()
         device_uuid = uuid_class(rx_message.device_eui)
         logging.debug("device_uuid: %s", device_uuid)
@@ -241,10 +283,7 @@ class ErsConfigurationHandler(_Handler):
 
         return measurement_count == expected_measurement_count
 
-    def _handle_message(self, rx_message, ttn_rxmsg):
-        logging.debug("uplink message received from %s", rx_message.device_eui)
-        rx_port = ttn_rxmsg.get("port", 5)  # Default Elsys ERS uplink port is 5.
-
+    def _handle_message(self, rx_message):
         if not self._is_conforming(raw_data=rx_message.raw_data, mcs=rx_message.mcs):
             logging.debug("message is not conforming to protocol payload specification")
 
@@ -255,7 +294,7 @@ class ErsConfigurationHandler(_Handler):
             b64_payload = str(base64.b64encode(payload), "ascii")
 
             # ERS downlink payloads are sent on the configured port + 1
-            tx_port = rx_port + 1
+            tx_port = self.rx_port + 1
 
             logging.debug(
                 "sending downlink payload %s (%s) to port %d",
