@@ -8,6 +8,7 @@ clairttn = {editable = true, path = "."}
 
 [dev-packages]
 pytest = "*"
+clairttn = {editable = true, path = "."}
 
 [requires]
 python_version = "3.9"
