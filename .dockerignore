@@ -1,0 +1,10 @@
+.git
+.gitignore
+Dockerfile*
+docker-compose*
+README.md
+LICENSE
+.vscode
+*_dump.json
+*config.png
+*config.txt

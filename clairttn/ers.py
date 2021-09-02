@@ -66,7 +66,7 @@ PARAMETER_SETS = {
 
 
 def decode_payload(payload: bytes, rx_datetime: dt.datetime) -> typing.List[t.Sample]:
-    """Decode an ERS uplink payload and return a list of samples in chronoligcal order."""
+    """Decode an ERS uplink payload and return a list of samples in chronological order."""
 
     measurements = _decode_measurements(payload)
     samples = _to_samples(measurements, rx_datetime)

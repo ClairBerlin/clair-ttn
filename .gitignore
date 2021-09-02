@@ -1,3 +1,13 @@
 __pycache__
 env
 .vscode
+
+*-nfc-config.txt
+*.png
+*dump*.json
+
+lib
+bin
+
+pyvenv.cfg
+*.egg-info

@@ -4,16 +4,19 @@ from setuptools import setup, find_packages
 
 setup(
     name='clairttn',
-    version='0.1',
+    version='0.2',
     packages=find_packages(),
     install_requires=[
-        'Click',
-        'ttn',
+        'click',
+        'paho-mqtt',
         'jsonapi_requests',
         'python-dateutil',
         'requests',
         'pyqrcode',
-        'pypng'
+        'pypng',
+        # Pin transitive dependency of the jsonapi_requests library until fixed;
+        # See https://github.com/socialwifi/jsonapi-requests/issues/53
+        'tenacity==7.0' 
     ],
     entry_points='''
     [console_scripts]
