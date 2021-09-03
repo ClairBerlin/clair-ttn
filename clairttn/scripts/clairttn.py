@@ -7,12 +7,6 @@ import time
 import clairttn.node_handler as clhandler
 import clairttn.ttn_handler as ttnhandler
 
-# set up debug logging to stderr
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-logger.addHandler(logging.StreamHandler())
-
-
 signal_received = False
 
 
