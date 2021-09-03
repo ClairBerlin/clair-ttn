@@ -61,11 +61,10 @@ class _TtnHandler:
             logging.debug("Uplink message received on topic %s", topic)
             logging.debug("Message payload: %s", ttn_rxmsg)
 
-            if not ttn_rxmsg["payload_raw"]:
-                logging.warning("message without payload, skipping...")
-                return
             rx_message = self._extract_ttn_message(ttn_rxmsg)
-
+            if not rx_message:
+                logging.warning("Message without payload, skipping...")
+                return
             try:
                 # The message handler may choose to send a downlink message to the node
                 # in return. Otherwise, response = None
@@ -122,6 +121,8 @@ class TtnV2Handler(_TtnHandler):
         )
 
     def _extract_ttn_message(self, ttn_rxmsg):
+        if not ttn_rxmsg["payload_raw"]:
+            return None
         try:
             device_eui = bytes.fromhex(ttn_rxmsg["hardware_serial"])
             logging.info("device eui: %s", device_eui.hex())
@@ -162,6 +163,8 @@ class TtnV3Handler(_TtnHandler):
         )
 
     def _extract_ttn_message(self, ttn_rxmsg):
+        if not ttn_rxmsg["uplink_message"]["payload_raw"]:
+            return None
         try:
             device_ids = ttn_rxmsg["end_device_ids"]
             device_eui = bytes.fromhex(device_ids["dev_eui"])
