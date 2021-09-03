@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 
 import logging
+
+# set up debug logging to stderr
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
+
 import click
 import signal
 import time
