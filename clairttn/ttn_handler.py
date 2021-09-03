@@ -163,7 +163,7 @@ class TtnV3Handler(_TtnHandler):
         )
 
     def _extract_ttn_message(self, ttn_rxmsg):
-        if not ttn_rxmsg["uplink_message"]["payload_raw"]:
+        if not ttn_rxmsg["uplink_message"]["frm_payload"]:
             return None
         try:
             device_ids = ttn_rxmsg["end_device_ids"]
