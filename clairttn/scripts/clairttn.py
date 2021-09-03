@@ -4,7 +4,8 @@ import logging
 import click
 import signal
 import time
-import clairttn.handler as clhandler
+import clairttn.node_handler as clhandler
+import clairttn.ttn_handler as ttnhandler
 
 # set up debug logging to stderr
 logger = logging.getLogger()
@@ -71,24 +72,32 @@ def main(app_id, access_key_file, mode, api_root, stack):
 
     access_key = access_key_file.read().rstrip("\n")
 
+    # Select the appropriate payload handler for the configured type of node.
     if mode == "clairchen-forward":
-        handler = clhandler.ClairchenForwardingHandler(
-            app_id, access_key, api_root, stack
-        )
+        node_handler = clhandler.ClairchenForwardingHandler(api_root)
     elif mode == "ers-forward":
-        handler = clhandler.ErsForwardingHandler(app_id, access_key, api_root, stack)
+        node_handler = clhandler.ErsForwardingHandler(api_root)
     elif mode == "ers-configure":
-        handler = clhandler.ErsConfigurationHandler(app_id, access_key, stack)
+        node_handler = clhandler.ErsConfigurationHandler(api_root)
     elif mode == "oy1012-forward":
-        handler = clhandler.Oy1012ForwardingHandler(app_id, access_key, api_root, stack)
+        node_handler = clhandler.Oy1012ForwardingHandler(api_root)
     else:
         # never reached thanks to click's option parsing
         click.echo("invalid mode: {}".format(mode))
         return
 
-    handler.connect()
+    if stack == "ttn-v2":
+        ttn_handler = ttnhandler.TtnV2Handler(app_id, access_key, node_handler)
+    elif stack == "ttn-v3":
+        ttn_handler = ttnhandler.TtnV3Handler(app_id, access_key, node_handler)
+    else:
+        # never reached thanks to click's option parsing
+        click.echo("invalid TTN stack: {}".format(stack))
+        return
+
+    ttn_handler.connect()
 
     while not signal_received:
         time.sleep(1)
 
-    handler.close()
+    ttn_handler.disconnect_and_close()
