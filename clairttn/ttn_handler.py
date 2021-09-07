@@ -10,88 +10,76 @@ import clairttn.types as types
 class RxMessage:
     """Core parts of the TTN message received from a node"""
 
-    def __init__(self, raw_data, device_eui, rx_datetime, rx_port, mcs):
+    def __init__(self, raw_data, device_id, device_eui, rx_datetime, rx_port, mcs):
         self.raw_data = raw_data
+        self.device_id = device_id
         self.device_eui = device_eui
         self.rx_datetime = rx_datetime
         self.rx_port = rx_port
         self.mcs = mcs
 
 
-class TxMessage:
-    """Message payload and information to transmit on a downlink."""
-
-    def __init__(self, device_eui, tx_port, b64_payload):
-        self.device_eui = device_eui
-        self.tx_port = tx_port
-        self.b64_payload = b64_payload
-
-
 class _TtnHandler:
-    def __init__(self, app_id, access_key, node_handler, broker_host, sub_topics):
+    def _handle_message(self, ttn_rxmsg):
+        raise NotImplementedError("Needs to be provided as callback.")
+
+    def _on_connect(self, client, _userdata, _flags, rc):
+        if rc == 0:
+            logging.info("Connect success!")
+            client.subscribe(self._sub_topics)
+            logging.debug("Subscribed to topic %s", self._sub_topics)
+        else:
+            logging.error("Failed to connect, return code %d", rc)
+
+    def _on_message(self, _client, _userdata, message):
+        # Decode UTF-8 bytes to Unicode,
+        mqtt_payload = message.payload.decode("utf8")
+        # Parse the string into a JSON object.
+        ttn_rxmsg = json.loads(mqtt_payload)
+        topic = message.topic
+        logging.debug("Uplink message received on topic %s", topic)
+        logging.debug("Message payload: %s", ttn_rxmsg)
+
+        rx_message = self._extract_rx_message(ttn_rxmsg)
+        if not rx_message:
+            logging.warning("Message without payload, skipping...")
+            return
+        try:
+            self.handle_message(rx_message)
+        except Exception as e2:
+            logging.error("exception during message handling: %s", e2)
+            logging.error(traceback.format_exc())
+
+    def __init__(self, app_id, access_key, broker_host, sub_topics):
         logging.debug("Application ID: %s", app_id)
 
-        self.node_handler = node_handler
-        self._broker_port = 1883
+        self._app_id = app_id
+        self._broker_port = 1883 # TTN uses the default MQTT port.
         self._broker_host = broker_host
         self._sub_topics = sub_topics
         self._mqtt_client = mqtt.Client(
             client_id="Clair-Berlin",
             clean_session=False,
             userdata=None,
-            protocol=mqtt.MQTTv311,
+            protocol=mqtt.MQTTv311, # TTN supports MQTT v 3.1.1 only
             transport="tcp",
         )
         self._mqtt_client.username_pw_set(username=app_id, password=access_key)
 
-        def _on_connect(client, _userdata, _flags, rc):
-            if rc == 0:
-                logging.info("Connect success!")
-                client.subscribe(self._sub_topics)
-                logging.debug("Subscribed to topic %s", self._sub_topics)
-            else:
-                logging.error("Failed to connect, return code %d", rc)
-
-        def _on_message(_client, _userdata, message):
-            # Decode UTF-8 bytes to Unicode,
-            mqtt_payload = message.payload.decode("utf8")
-            # Parse the string into a JSON object.
-            ttn_rxmsg = json.loads(mqtt_payload)
-            topic = message.topic
-            logging.debug("Uplink message received on topic %s", topic)
-            logging.debug("Message payload: %s", ttn_rxmsg)
-
-            rx_message = self._extract_ttn_message(ttn_rxmsg)
-            if not rx_message:
-                logging.warning("Message without payload, skipping...")
-                return
-            try:
-                # The message handler may choose to send a downlink message to the node
-                # in return. Otherwise, response = None
-                response = self.node_handler.handle_message(rx_message)
-                if response:
-                    logging.debug(
-                        "sending downlink payload %s (%s) to port %d",
-                        response.payload.hex(),
-                        response.b64_payload,
-                        response.tx_port,
-                    )
-                    self._mqtt_client.send(
-                        response.device_eui,
-                        response.b64_payload,
-                        response.tx_port,
-                        conf=False,
-                    )
-            except Exception as e2:
-                logging.error("exception during message handling: %s", e2)
-                logging.error(traceback.format_exc())
-
         # Attach callbacks to client.
-        self._mqtt_client.on_message = _on_message
-        self._mqtt_client.on_connect = _on_connect
+        self._mqtt_client.on_message = self._on_message
+        self._mqtt_client.on_connect = self._on_connect
+        # Fake callback. Must be provided by node-handler
+        self.handle_message = self._handle_message
 
-    def _extract_ttn_message(self, ttn_rxmsg):
+    def _extract_rx_message(self, ttn_rxmsg):
         raise NotImplementedError("needs to be implemented by subclass")
+
+    def _create_tx_message(self, port, payload):
+        raise NotImplementedError("needs to be implemented by subclass")
+
+    def set_message_handler(self, handle_message):
+        self.handle_message = handle_message
 
     def connect(self):
         if self._broker_host:
@@ -111,16 +99,17 @@ class _TtnHandler:
         self._mqtt_client.disconnect()
         logging.debug("Disconnected from %s", self._broker_host)
 
+    def send(self, dev_id, port, payload):
+        raise NotImplementedError("Must be implemented by subclass")
+
 
 class TtnV2Handler(_TtnHandler):
-    def __init__(self, app_id, access_key, node_handler):
+    def __init__(self, app_id, access_key):
         logging.info("Configuring TTN Stack V2")
         sub_topics = app_id + "/devices/+/up"
-        super().__init__(
-            app_id, access_key, node_handler, "eu.thethings.network", sub_topics
-        )
+        super().__init__(app_id, access_key, "eu.thethings.network", sub_topics)
 
-    def _extract_ttn_message(self, ttn_rxmsg):
+    def _extract_rx_message(self, ttn_rxmsg):
         if not ttn_rxmsg["payload_raw"]:
             return None
         try:
@@ -151,18 +140,27 @@ class TtnV2Handler(_TtnHandler):
             logging.warning("message without data rate, assuming simulated uplink")
             mcs = types.LoRaWanMcs.SF9BW125
         logging.info("MCS: %s", mcs)
-        return RxMessage(raw_data, device_eui, rx_datetime, rx_port, mcs)
+        return RxMessage(raw_data, device_id, device_eui, rx_datetime, rx_port, mcs)
+
+    def _create_tx_message(self, port, payload):
+        """Message format: https://www.thethingsnetwork.org/docs/applications/mqtt/api/#downlink-messages"""
+        tx_message = {"port": port, "payload_raw": payload}
+        json_tx_message = json.dumps(tx_message)
+        return str(json_tx_message)
+
+    def send(self, dev_id, port, payload):
+        topic = self._app_id + "/devices/" + dev_id + "/down"
+        message = self._create_tx_message(port, payload)
+        self._mqtt_client.publish(topic, message)
 
 
 class TtnV3Handler(_TtnHandler):
-    def __init__(self, app_id, access_key, node_handler):
+    def __init__(self, app_id, access_key):
         logging.info("Configuring TTN Stack V3")
         sub_topics = "v3/" + app_id + "@ttn/devices/+/up"
-        super().__init__(
-            app_id, access_key, node_handler, "eu1.cloud.thethings.network", sub_topics
-        )
+        super().__init__(app_id, access_key, "eu1.cloud.thethings.network", sub_topics)
 
-    def _extract_ttn_message(self, ttn_rxmsg):
+    def _extract_rx_message(self, ttn_rxmsg):
         if not ttn_rxmsg["uplink_message"]["frm_payload"]:
             return None
         try:
@@ -194,4 +192,16 @@ class TtnV3Handler(_TtnHandler):
             logging.warning("message without data rate, assuming simulated uplink")
             mcs = types.LoRaWanMcs.SF9BW125
         logging.info("MCS: %s", mcs)
-        return RxMessage(raw_data, device_eui, rx_datetime, rx_port, mcs)
+        return RxMessage(raw_data, device_id, device_eui, rx_datetime, rx_port, mcs)
+
+    def _create_tx_message(self, port, payload):
+        """Message format: https://www.thethingsindustries.com/docs/reference/data-formats/#downlink-messages"""
+        tx_frame = {"f_port": port, "frm_payload": payload, "priority": "NORMAL"}
+        tx_message = {"downlinks": [tx_frame]}
+        json_tx_message = json.dumps(tx_message)
+        return str(json_tx_message)
+
+    def send(self, dev_id, port, payload):
+        topic = "v3/" + self._app_id + "@ttn/devices/" + dev_id + "/down/push"
+        message = self._create_tx_message(port, payload)
+        self._mqtt_client.publish(topic, message)

@@ -5,17 +5,26 @@ import jsonapi_requests as jarequests
 import clairttn.clairchen as clairchen
 import clairttn.ers as ers
 import clairttn.oy1012 as oy1012
-from clairttn.ttn_handler import TxMessage
 
 
 class _NodeHandler:
+    def __init__(self, ttn_client):
+        self.ttn_client = ttn_client
+
+    def connect(self):
+        self.ttn_client.connect()
+
+    def disconnect_and_close(self):
+        self.ttn_client.disconnect_and_close()
+
     def _handle_message(self, rx_message):
         raise NotImplementedError("needs to be implemented by subclass")
 
 
 class _SampleForwardingHandler(_NodeHandler):
-    def __init__(self, api_root):
-        super().__init__()
+    def __init__(self, ttn_client, api_root):
+        super().__init__(ttn_client)
+        self.ttn_client.set_message_handler(self.handle_message)
 
         api = jarequests.Api.config(
             {
@@ -100,6 +109,10 @@ class Oy1012ForwardingHandler(_SampleForwardingHandler):
 class ErsConfigurationHandler(_NodeHandler):
     """A handler for Elsys ERS devices which sends parameter downlink messages"""
 
+    def __init__(self, ttn_client):
+        super().__init__(ttn_client)
+        self.ttn_client.set_message_handler(self.handle_message)
+
     def _is_conforming(self, raw_data, mcs):
         measurement_count = len(ers.decode_payload(raw_data, dt.datetime.now()))
         logging.debug("Measurement count: %d", measurement_count)
@@ -117,12 +130,18 @@ class ErsConfigurationHandler(_NodeHandler):
             parameter_set = ers.PARAMETER_SETS[mcs]
             logging.debug("New parameter set: {}".format(parameter_set))
 
+            device_id = rx_message.device_id
             payload = ers.encode_parameter_set(parameter_set)
             b64_payload = str(base64.b64encode(payload), "ascii")
             # ERS downlink payloads are sent on the configured port + 1
             tx_port = self.rx_port + 1
 
-            return TxMessage(rx_message.device_eui, tx_port, b64_payload)
+            logging.debug(
+                "sending downlink payload %s (%s) to port %d",
+                payload.hex(),
+                b64_payload,
+                tx_port,
+            )
+            self.ttn_client.send(device_id, tx_port, b64_payload)
         else:
             logging.debug("No change in uplink transmission parameters needed.")
-            return None

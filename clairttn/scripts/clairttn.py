@@ -71,33 +71,32 @@ def main(app_id, access_key_file, mode, api_root, stack):
     signal.signal(signal.SIGINT, handle_signal)
 
     access_key = access_key_file.read().rstrip("\n")
-
-    # Select the appropriate payload handler for the configured type of node.
-    if mode == "clairchen-forward":
-        node_handler = clhandler.ClairchenForwardingHandler(api_root)
-    elif mode == "ers-forward":
-        node_handler = clhandler.ErsForwardingHandler(api_root)
-    elif mode == "ers-configure":
-        node_handler = clhandler.ErsConfigurationHandler(api_root)
-    elif mode == "oy1012-forward":
-        node_handler = clhandler.Oy1012ForwardingHandler(api_root)
-    else:
-        # never reached thanks to click's option parsing
-        click.echo("invalid mode: {}".format(mode))
-        return
-
     if stack == "ttn-v2":
-        ttn_handler = ttnhandler.TtnV2Handler(app_id, access_key, node_handler)
+        ttn_handler = ttnhandler.TtnV2Handler(app_id, access_key)
     elif stack == "ttn-v3":
-        ttn_handler = ttnhandler.TtnV3Handler(app_id, access_key, node_handler)
+        ttn_handler = ttnhandler.TtnV3Handler(app_id, access_key)
     else:
         # never reached thanks to click's option parsing
         click.echo("invalid TTN stack: {}".format(stack))
         return
 
-    ttn_handler.connect()
+    # Select the appropriate payload handler for the configured type of node.
+    if mode == "clairchen-forward":
+        node_handler = clhandler.ClairchenForwardingHandler(ttn_handler, api_root)
+    elif mode == "ers-forward":
+        node_handler = clhandler.ErsForwardingHandler(ttn_handler, api_root)
+    elif mode == "ers-configure":
+        node_handler = clhandler.ErsConfigurationHandler(ttn_handler)
+    elif mode == "oy1012-forward":
+        node_handler = clhandler.Oy1012ForwardingHandler(ttn_handler, api_root)
+    else:
+        # never reached thanks to click's option parsing
+        click.echo("invalid mode: {}".format(mode))
+        return
+
+    node_handler.connect()
 
     while not signal_received:
         time.sleep(1)
 
-    ttn_handler.disconnect_and_close()
+    node_handler.disconnect_and_close()
