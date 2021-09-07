@@ -4,7 +4,8 @@ Clair-TTN is part of the _Clair Platform_, a system to collect measurements from
 
 Technically speaking, Clair-TTN is a service in the [Clair Stack](https://github.com/ClairBerlin/clair-stack), which is the infrastructure-as-code implementation of the Clair Platform.
 
-The application for The Things Network (TTN) can be run in the following modes:
+The application for The Things Network (TTN) supports both the legacy V2 stack as well as the new V3 stack.
+It can be run in the following modes:
 
 * Clairchen forwarding: subscribes to uplink messages of Clairchen nodes, decodes them and forwards measurement samples to the ingest endpoint of the backend API.
 * ERS forwarding: does the sampe for ERS nodes.
@@ -42,6 +43,7 @@ Options:
   -m, --mode [clairchen-forward|ers-forward|ers-configure|oy1012-forward]
                                   [required]
   -r, --api-root TEXT             [default: http://localhost:8888/ingest/v1/]
+  -s, --stack [ttn-v2|ttn-v3]     [default: ttn-v2]
   --help                          Show this message and exit.
 ```
 
@@ -52,6 +54,7 @@ be specified as the following environment variables:
 * access key: `CLAIR_TTN_ACCESS_KEY_FILE`
 * mode: `CLAIR_MODE`
 * api root: `CLAIR_API_ROOT`
+* stack: `CLAIR_TTN_STACK`
 
 # TTN Node Management Tools
 
