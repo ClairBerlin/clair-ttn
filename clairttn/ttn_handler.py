@@ -69,7 +69,7 @@ class _TtnHandler:
         # Attach callbacks to client.
         self._mqtt_client.on_message = self._on_message
         self._mqtt_client.on_connect = self._on_connect
-        # Fake callback. Must be provided by node-handler
+        # Fake callback. Must be provided by appplication-layer node handler
         self.handle_message = self._handle_message
 
     def _extract_rx_message(self, ttn_rxmsg):
@@ -77,9 +77,6 @@ class _TtnHandler:
 
     def _create_tx_message(self, port, payload):
         raise NotImplementedError("needs to be implemented by subclass")
-
-    def set_message_handler(self, handle_message):
-        self.handle_message = handle_message
 
     def connect(self):
         if self._broker_host:

@@ -10,6 +10,7 @@ import clairttn.oy1012 as oy1012
 class _NodeHandler:
     def __init__(self, ttn_client):
         self.ttn_client = ttn_client
+        self.ttn_client.handle_message = self._handle_message
 
     def connect(self):
         self.ttn_client.connect()
@@ -24,8 +25,6 @@ class _NodeHandler:
 class _SampleForwardingHandler(_NodeHandler):
     def __init__(self, ttn_client, api_root):
         super().__init__(ttn_client)
-        self.ttn_client.set_message_handler(self.handle_message)
-
         api = jarequests.Api.config(
             {
                 "API_ROOT": api_root,
@@ -35,7 +34,7 @@ class _SampleForwardingHandler(_NodeHandler):
         )
         self._sample_endpoint = api.endpoint("ingest")
 
-    def handle_message(self, rx_message):
+    def _handle_message(self, rx_message):
         uuid_class = self._get_uuid_class()
         device_uuid = uuid_class(rx_message.device_eui)
         logging.debug("device_uuid: %s", device_uuid)
@@ -109,10 +108,6 @@ class Oy1012ForwardingHandler(_SampleForwardingHandler):
 class ErsConfigurationHandler(_NodeHandler):
     """A handler for Elsys ERS devices which sends parameter downlink messages"""
 
-    def __init__(self, ttn_client):
-        super().__init__(ttn_client)
-        self.ttn_client.set_message_handler(self.handle_message)
-
     def _is_conforming(self, raw_data, mcs):
         measurement_count = len(ers.decode_payload(raw_data, dt.datetime.now()))
         logging.debug("Measurement count: %d", measurement_count)
@@ -123,7 +118,7 @@ class ErsConfigurationHandler(_NodeHandler):
 
         return measurement_count == expected_measurement_count
 
-    def handle_message(self, rx_message):
+    def _handle_message(self, rx_message):
         if not self._is_conforming(raw_data=rx_message.raw_data, mcs=rx_message.mcs):
             logging.debug("Message is not conforming to protocol payload specification")
 
