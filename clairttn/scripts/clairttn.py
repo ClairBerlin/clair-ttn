@@ -10,6 +10,7 @@ logger.addHandler(logging.StreamHandler())
 import click
 import signal
 import time
+import threading
 import clairttn.node_handler as clhandler
 import clairttn.ttn_handler as ttnhandler
 
@@ -98,6 +99,9 @@ def main(app_id, access_key_file, mode, api_root, stack):
 
     while not signal_received:
         time.sleep(1)
+        # Health-check of the MQTT background thread:
+        # Write a file if both the present foreground thread and the background thread
+        # exist; i.e., if the MQTT background thread has not crashed.
         if threading.active_count() == 2:
             with open('/tmp/clair-alive', 'w') as f:
                 f.write("alive\n")
