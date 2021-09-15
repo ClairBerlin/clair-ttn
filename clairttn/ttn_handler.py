@@ -54,14 +54,14 @@ class _TtnHandler:
         logging.debug("Application ID: %s", app_id)
 
         self._app_id = app_id
-        self._broker_port = 1883 # TTN uses the default MQTT port.
+        self._broker_port = 1883  # TTN uses the default MQTT port.
         self._broker_host = broker_host
         self._sub_topics = sub_topics
         self._mqtt_client = mqtt.Client(
             client_id="Clair-Berlin",
             clean_session=False,
             userdata=None,
-            protocol=mqtt.MQTTv311, # TTN supports MQTT v 3.1.1 only
+            protocol=mqtt.MQTTv311,  # TTN supports MQTT v 3.1.1 only
             transport="tcp",
         )
         self._mqtt_client.username_pw_set(username=app_id, password=access_key)
@@ -107,7 +107,7 @@ class TtnV2Handler(_TtnHandler):
         super().__init__(app_id, access_key, "eu.thethings.network", sub_topics)
 
     def _extract_rx_message(self, ttn_rxmsg):
-        if not ttn_rxmsg["payload_raw"]:
+        if not "payload_raw" in ttn_rxmsg:
             return None
         try:
             device_eui = bytes.fromhex(ttn_rxmsg["hardware_serial"])
@@ -158,7 +158,7 @@ class TtnV3Handler(_TtnHandler):
         super().__init__(app_id, access_key, "eu1.cloud.thethings.network", sub_topics)
 
     def _extract_rx_message(self, ttn_rxmsg):
-        if not ttn_rxmsg["uplink_message"]["frm_payload"]:
+        if not "frm_payload" in ttn_rxmsg["uplink_message"]:
             return None
         try:
             device_ids = ttn_rxmsg["end_device_ids"]
