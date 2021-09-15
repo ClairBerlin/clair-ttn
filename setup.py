@@ -18,6 +18,8 @@ setup(
         # See https://github.com/socialwifi/jsonapi-requests/issues/53
         'tenacity==7.0' 
     ],
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
     entry_points='''
     [console_scripts]
     clair-ttn=clairttn.scripts.clairttn:main
