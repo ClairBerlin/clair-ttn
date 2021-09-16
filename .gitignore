@@ -11,3 +11,4 @@ bin
 
 pyvenv.cfg
 *.egg-info
+.eggs
