@@ -1,5 +1,5 @@
-import clairttn.ttn_handler as ttn_handler
 import pytest
+import clairttn.ttn_handler as ttn_handler
 import base64
 import dateutil.parser as dtparser
 
