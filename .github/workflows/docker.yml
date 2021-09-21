@@ -1,9 +1,12 @@
 name: CI
 
+# this workflow is only triggered by pushed tags
 on:
   push:
     tags:
-      - '**'
+      - '*'
+      
+  # make this workflow triggerable in the GitHub Actions menu
   workflow_dispatch:
 
 jobs:
@@ -20,6 +23,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - 
+        # store the git tag which triggered the build in the GitHub environment variable TAG
         name: Get the tag
         run: echo "TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
       -
