@@ -55,8 +55,7 @@ Options:
   --help                          Show this message and exit.
 ```
 
-The app id, the access key file, the mode, and the api root parameter can also
-be specified as the following environment variables:
+The following parameters can also be specified as environment variables:
 
 * app id: `CLAIR_TTN_APP_ID`
 * access key: `CLAIR_TTN_ACCESS_KEY_FILE`
