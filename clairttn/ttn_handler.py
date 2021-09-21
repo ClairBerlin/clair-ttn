@@ -185,7 +185,7 @@ class TtnV3Handler(_TtnHandler):
             )
         try:
             mcs = types.DATA_RATE_INDEX[lora_rate]
-        except KeyError:
+        except Exception:
             logging.warning("message without data rate, assuming simulated uplink")
             mcs = types.LoRaWanMcs.SF9BW125
         logging.info("MCS: %s", mcs)
