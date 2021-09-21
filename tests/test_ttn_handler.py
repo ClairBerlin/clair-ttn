@@ -83,6 +83,93 @@ class TestTTNMessageDecoding:
         )
         assert rx_message.rx_port == 1
 
+    def testV3MessageWithoutLoraRate(self):
+        app_id = "dummy"
+        access_key = "dummy"
+        v3_handler = ttn_handler.TtnV3Handler(app_id, access_key)
+
+        message_without_rate = {
+            "end_device_ids": {
+                "device_id": "66b8ccaa-90b9-2d24-bf59-0ea9e23b3bb4",
+                "application_ids": {"application_id": "elsys-ers-co2"},
+                "dev_eui": "A81758FFFE053C84",
+                "join_eui": "70B3D57ED0035B40",
+                "dev_addr": "260B530E",
+            },
+            "correlation_ids": [
+                "as:up:01FG3YTC0K0KPEFA5FDKCZKF8E",
+                "ns:uplink:01FG3YTBT578KF54GBQ4F4071G",
+                "pba:conn:up:01FG2QC930NHK24X1NYE3VRZPB",
+                "pba:uplink:01FG3YTBSMERJP80229JDGN90N",
+                "rpc:/ttn.lorawan.v3.GsNs/HandleUplink:01FG3YTBT5NG4T0CKD8CH6WSFN",
+                "rpc:/ttn.lorawan.v3.NsAs/HandleUplink:01FG3YTC0J0H7ZVCQB0YWZ3FKP",
+            ],
+            "received_at": "2021-09-21T10:35:57.332885835Z",
+            "uplink_message": {
+                "session_key_id": "AXwFUO6mb0zrxADfwled5Q==",
+                "f_port": 5,
+                "f_cnt": 41,
+                "frm_payload": "BgLHBgKrBgL6",
+                "decoded_payload": {"co2": 762},
+                "rx_metadata": [
+                    {
+                        "gateway_ids": {"gateway_id": "packetbroker"},
+                        "packet_broker": {
+                            "message_id": "01FG3YTBSMERJP80229JDGN90N",
+                            "forwarder_net_id": "000013",
+                            "forwarder_tenant_id": "ttnv2",
+                            "forwarder_cluster_id": "ttn-v2-eu-4",
+                            "forwarder_gateway_eui": "7276FF000B030C96",
+                            "forwarder_gateway_id": "eui-7276ff000b030c96",
+                            "home_network_net_id": "000013",
+                            "home_network_tenant_id": "ttn",
+                            "home_network_cluster_id": "ttn-eu1",
+                        },
+                        "rssi": -119,
+                        "channel_rssi": -119,
+                        "snr": -15.5,
+                        "location": {
+                            "latitude": 52.52603005,
+                            "longitude": 13.31433411,
+                            "altitude": 65,
+                        },
+                        "uplink_token": "eyJnIjoiWlhsS2FHSkhZMmxQYVVwQ1RWUkpORkl3VGs1VE1XTnBURU5LYkdKdFRXbFBhVXBDVFZSSk5GSXdUazVKYVhkcFlWaFphVTlwU2toT1Z6RjZaV3R2TkU5SGNEUmtNVnB4WkdwQ1ZrbHBkMmxrUjBadVNXcHZhV1F3V2t0VFdFWlZXVEZhTkZSNlZUUmpXR1J0Wkc1a05sTnRXVE5rZVVvNUxteDZMVnBIYlY5VkxXTkhUMjg0U1MxbWVuVmpZVUV1V21abldERk9NbFV5ZGxOT00zbGxOUzVhTlcwMlVtUjBibUpsYlZrNVVsa3hiVEpITTBkTWFrWmtVRzUzYlZkWVZYVTFialJrZFc5YVFtUnlObFJLV25aUFUyTlRiVEIwVlRGU1dWSnJUVlpuVjBOM01HaG5ORzQwUjBaWFZVa3pZbEptVkZOaFZucGpWamhXTVdWUlMweHVSRmd4TXpVMVVGcFVVbFZFTFZKTGJuRlNPWEJGUVhkcVVtMHljVGgzTnpCU1NXWlpNVlpDY0RCRk1sRmhZekJWZVZaYWJWQmxibVJzYUhwZk5rWjJjVE10VEZOSWJHOVhTakZ4TVdGSkxteHpTM1IyWVc1TlVUZEJXR05VYjFWZldXVTBObEU9IiwiYSI6eyJmbmlkIjoiMDAwMDEzIiwiZnRpZCI6InR0bnYyIiwiZmNpZCI6InR0bi12Mi1ldS00In19",
+                    }
+                ],
+                "settings": {
+                    "data_rate": {
+                        "lora": {"bandwidth": 125000, "spreading_factor": 12}
+                    },
+                    "coding_rate": "4/5",
+                    "frequency": "868100000",
+                },
+                "received_at": "2021-09-21T10:35:57.125514417Z",
+                "consumed_airtime": "1.482752s",
+                "version_ids": {
+                    "brand_id": "elsys",
+                    "model_id": "ers-lite",
+                    "hardware_version": "1.0",
+                    "firmware_version": "1.0",
+                    "band_id": "EU_863_870",
+                },
+                "network_ids": {
+                    "net_id": "000013",
+                    "tenant_id": "ttn",
+                    "cluster_id": "ttn-eu1",
+                },
+            },
+        }
+
+        rx_message = v3_handler._extract_rx_message(message_without_rate)
+
+        assert rx_message.device_eui == bytearray.fromhex("A81758FFFE053C84")
+        assert rx_message.device_id == "66b8ccaa-90b9-2d24-bf59-0ea9e23b3bb4"
+        assert rx_message.raw_data == base64.b64decode("BgLHBgKrBgL6")
+        assert rx_message.rx_datetime == dtparser.parse(
+            "2021-09-21T10:35:57.125514417Z"
+        )
+        assert rx_message.rx_port == 5
+
     def testV3MessageWithoutPayload(self):
         app_id = "dummy"
         access_key = "dummy"
