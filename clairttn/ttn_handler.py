@@ -42,7 +42,7 @@ class _TtnHandler:
 
         rx_message = self._extract_rx_message(ttn_rxmsg)
         if not rx_message:
-            logging.warning("Message without payload, skipping...")
+            logging.warning("Skipping message...")
             return
         try:
             self.handle_message(rx_message)
@@ -108,7 +108,7 @@ class TtnV2Handler(_TtnHandler):
 
     def _extract_rx_message(self, ttn_rxmsg):
         if "payload_raw" not in ttn_rxmsg:
-            logging.warning("Message without payload, skipping...")
+            logging.warning("Message without payload.")
             return None
         try:
             device_eui = bytes.fromhex(ttn_rxmsg["hardware_serial"])
@@ -161,7 +161,7 @@ class TtnV3Handler(_TtnHandler):
 
     def _extract_rx_message(self, ttn_rxmsg):
         if "frm_payload" not in ttn_rxmsg["uplink_message"]:
-            logging.warning("Message without payload, skipping...")
+            logging.warning("Message without payload.")
             return None
         try:
             device_ids = ttn_rxmsg["end_device_ids"]
