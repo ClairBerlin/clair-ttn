@@ -107,7 +107,8 @@ class TtnV2Handler(_TtnHandler):
         super().__init__(app_id, access_key, "eu.thethings.network", sub_topics)
 
     def _extract_rx_message(self, ttn_rxmsg):
-        if not "payload_raw" in ttn_rxmsg:
+        if "payload_raw" not in ttn_rxmsg:
+            logging.warning("Message without payload, skipping...")
             return None
         try:
             device_eui = bytes.fromhex(ttn_rxmsg["hardware_serial"])
@@ -131,6 +132,7 @@ class TtnV2Handler(_TtnHandler):
             logging.error(
                 "Exception decoding the MQTT message: %s \n error %s", ttn_rxmsg, e1
             )
+            return None
         try:
             mcs = types.LoRaWanMcs[lora_rate]
         except KeyError:
@@ -158,7 +160,8 @@ class TtnV3Handler(_TtnHandler):
         super().__init__(app_id, access_key, "eu1.cloud.thethings.network", sub_topics)
 
     def _extract_rx_message(self, ttn_rxmsg):
-        if not "frm_payload" in ttn_rxmsg["uplink_message"]:
+        if "frm_payload" not in ttn_rxmsg["uplink_message"]:
+            logging.warning("Message without payload, skipping...")
             return None
         try:
             device_ids = ttn_rxmsg["end_device_ids"]
@@ -178,16 +181,17 @@ class TtnV3Handler(_TtnHandler):
 
             # Default Elsys ERS uplink port is 5.
             rx_port = uplink_message.get("f_port", 5)
-            lora_rate = uplink_message["settings"]["data_rate_index"]
+            lora_rate = uplink_message["settings"].get("data_rate_index")
+            if lora_rate is None:
+                logging.warning("message without data rate, assuming simulated uplink")
+                mcs = types.LoRaWanMcs.SF9BW125
+            else:
+                mcs = types.DATA_RATE_INDEX[lora_rate]    
         except Exception as e1:
             logging.error(
                 "Exception decoding the MQTT message: %s \n error %s", ttn_rxmsg, e1
             )
-        try:
-            mcs = types.DATA_RATE_INDEX[lora_rate]
-        except Exception:
-            logging.warning("message without data rate, assuming simulated uplink")
-            mcs = types.LoRaWanMcs.SF9BW125
+            return None
         logging.info("MCS: %s", mcs)
         return RxMessage(raw_data, device_id, device_eui, rx_datetime, rx_port, mcs)
 
