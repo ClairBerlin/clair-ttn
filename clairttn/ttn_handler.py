@@ -42,7 +42,7 @@ class _TtnHandler:
 
         rx_message = self._extract_rx_message(ttn_rxmsg)
         if not rx_message:
-            logging.warning("Message without payload, skipping...")
+            logging.warning("Skipping message...")
             return
         try:
             self.handle_message(rx_message)
@@ -54,14 +54,14 @@ class _TtnHandler:
         logging.debug("Application ID: %s", app_id)
 
         self._app_id = app_id
-        self._broker_port = 1883 # TTN uses the default MQTT port.
+        self._broker_port = 1883  # TTN uses the default MQTT port.
         self._broker_host = broker_host
         self._sub_topics = sub_topics
         self._mqtt_client = mqtt.Client(
             client_id="Clair-Berlin",
             clean_session=False,
             userdata=None,
-            protocol=mqtt.MQTTv311, # TTN supports MQTT v 3.1.1 only
+            protocol=mqtt.MQTTv311,  # TTN supports MQTT v 3.1.1 only
             transport="tcp",
         )
         self._mqtt_client.username_pw_set(username=app_id, password=access_key)
@@ -107,7 +107,8 @@ class TtnV2Handler(_TtnHandler):
         super().__init__(app_id, access_key, "eu.thethings.network", sub_topics)
 
     def _extract_rx_message(self, ttn_rxmsg):
-        if not ttn_rxmsg["payload_raw"]:
+        if "payload_raw" not in ttn_rxmsg:
+            logging.warning("Message without payload.")
             return None
         try:
             device_eui = bytes.fromhex(ttn_rxmsg["hardware_serial"])
@@ -131,6 +132,7 @@ class TtnV2Handler(_TtnHandler):
             logging.error(
                 "Exception decoding the MQTT message: %s \n error %s", ttn_rxmsg, e1
             )
+            return None
         try:
             mcs = types.LoRaWanMcs[lora_rate]
         except KeyError:
@@ -158,7 +160,8 @@ class TtnV3Handler(_TtnHandler):
         super().__init__(app_id, access_key, "eu1.cloud.thethings.network", sub_topics)
 
     def _extract_rx_message(self, ttn_rxmsg):
-        if not ttn_rxmsg["uplink_message"]["frm_payload"]:
+        if "frm_payload" not in ttn_rxmsg["uplink_message"]:
+            logging.warning("Message without payload.")
             return None
         try:
             device_ids = ttn_rxmsg["end_device_ids"]
@@ -178,16 +181,17 @@ class TtnV3Handler(_TtnHandler):
 
             # Default Elsys ERS uplink port is 5.
             rx_port = uplink_message.get("f_port", 5)
-            lora_rate = uplink_message["settings"]["data_rate_index"]
+            lora_rate = uplink_message["settings"].get("data_rate_index")
+            if lora_rate is None:
+                logging.warning("message without data rate, assuming simulated uplink")
+                mcs = types.LoRaWanMcs.SF9BW125
+            else:
+                mcs = types.DATA_RATE_INDEX[lora_rate]    
         except Exception as e1:
             logging.error(
                 "Exception decoding the MQTT message: %s \n error %s", ttn_rxmsg, e1
             )
-        try:
-            mcs = types.DATA_RATE_INDEX[lora_rate]
-        except KeyError:
-            logging.warning("message without data rate, assuming simulated uplink")
-            mcs = types.LoRaWanMcs.SF9BW125
+            return None
         logging.info("MCS: %s", mcs)
         return RxMessage(raw_data, device_id, device_eui, rx_datetime, rx_port, mcs)
 

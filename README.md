@@ -16,7 +16,7 @@ In addition to the TTN application, this repository also contains a couple of TT
 
 ## Development Setup
 
-```
+```shell
 python3 -m venv env
 . env/bin/activate
 pip install wheel
@@ -25,9 +25,17 @@ pip install --editable .
 
 Afterwards, the `clairttn` command should be available ([source](https://click.palletsprojects.com/en/7.x/setuptools/#testing-the-script)).
 
+### Tests
+
+`pytest` tests can be run like this:
+
+```shell
+python3 setup.py test
+```
+
 ## Usage
 
-```
+```shell
 Usage: clair-ttn [OPTIONS]
 
   Clair TTN application that can be run in one of the following modes:
@@ -47,8 +55,7 @@ Options:
   --help                          Show this message and exit.
 ```
 
-The app id, the access key file, the mode, and the api root parameter can also
-be specified as the following environment variables:
+The following parameters can also be specified as environment variables:
 
 * app id: `CLAIR_TTN_APP_ID`
 * access key: `CLAIR_TTN_ACCESS_KEY_FILE`
@@ -56,9 +63,9 @@ be specified as the following environment variables:
 * api root: `CLAIR_API_ROOT`
 * stack: `CLAIR_TTN_STACK`
 
-# TTN Node Management Tools
+## TTN Node Management Tools
 
-## Device Registration
+### Device Registration
 
 Registering a TTN node is a three-step process:
 
@@ -69,11 +76,11 @@ Registering a TTN node is a three-step process:
 
 Note that, currently, only the [ERS CO2](https://www.elsys.se/en/ers-co2/) and [ERS CO2 Lite](https://www.elsys.se/en/ers-co2-lite/) sensors by [ELSYS](https://www.elsys.se/) are supported by these tools.
 
-### clair-register-device-in-ttn
+#### clair-register-device-in-ttn
 
 `clair-register-device-in-ttn` computes the managair device id from the device's TTN EUI, generates a device-specific key, and registers the device to the TTN application identified by `APP_ID`.
 
-```
+```shell
 Usage: clair-register-device-in-ttn [OPTIONS] APP_ID ACCESS_KEY_FILE APP_EUI
                                     [DEVICE_EUI]...
 
@@ -88,11 +95,11 @@ Options:
   --help  Show this message and exit.
 ```
 
-### clair-generate-nfc-config
+#### clair-generate-nfc-config
 
 `clair-generate-nfc-config` retrieves the application EUI and the device-specific application key from the TTN application identified by `APP_ID`, generates NFC settings according to [ELSYS's specification](https://www.elsys.se/en/elsys-nfc-settings-specification/) and writes them both to a text file and a PNG QR code which can be read using the [NFC Tools app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html).
 
-```
+```shell
 Usage: clair-generate-nfc-config [OPTIONS] APP_ID ACCESS_KEY_FILE
                                  [DEVICE_EUI]...
 
@@ -106,11 +113,11 @@ Options:
   --help  Show this message and exit.
 ```
 
-### clair-register-device-in-managair
+#### clair-register-device-in-managair
 
 `clair-register-device-in-managair` computes the managair device id from the device's TTN EUI and creates a corresponding node owned by the organization identified by OWNER_ID.
 
-```
+```shell
 Usage: clair-register-device-in-managair [OPTIONS] PROTOCOL_ID MODEL_ID
                                          OWNER_ID [DEVICE_EUI]...
 
@@ -131,13 +138,13 @@ Options:
   --help                   Show this message and exit.
 ```
 
-## Restoring data from the TTN's Storage Integration
+### Restoring data from the TTN's Storage Integration
 
 The [TTN Storage Integration](https://www.thethingsnetwork.org/docs/applications/storage/), if enabled, persists your TTN application's data for seven days. `clair-generate-fixtures-from-storage` reads this data and converts it to fixtures which can be read by Django's [`loaddata`](https://docs.djangoproject.com/en/3.1/ref/django-admin/#loaddata) command.
 
-### clair-generate-fixtures-from-storage
+#### clair-generate-fixtures-from-storage
 
-```
+```shell
 Usage: clair-generate-fixtures-from-storage [OPTIONS] BASE_URL ACCESS_KEY_FILE
 
   Generate fixtures from the TTN's Storage integration.
