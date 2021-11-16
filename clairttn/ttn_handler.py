@@ -54,7 +54,7 @@ class _TtnHandler:
         logging.debug("Application ID: %s", app_id)
 
         self._app_id = app_id
-        self._broker_port = 1883  # TTN uses the default MQTT port.
+        self._broker_port = 8883  # TTN uses the default MQTT TLS port.
         self._broker_host = broker_host
         self._sub_topics = sub_topics
         self._mqtt_client = mqtt.Client(
@@ -65,6 +65,7 @@ class _TtnHandler:
             transport="tcp",
         )
         self._mqtt_client.username_pw_set(username=app_id, password=access_key)
+        self._mqtt_client.tls_set()
 
         # Attach callbacks to client.
         self._mqtt_client.on_message = self._on_message
