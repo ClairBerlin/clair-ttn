@@ -76,7 +76,7 @@ Registering a TTN node is a three-step process:
 
 Note that, currently, only the [ERS CO2](https://www.elsys.se/en/ers-co2/) and [ERS CO2 Lite](https://www.elsys.se/en/ers-co2-lite/) sensors by [ELSYS](https://www.elsys.se/) are supported by these tools.
 
-#### clair-register-device-in-ttn
+#### clair-register-device-in-ttn (TTN v2 only, deprecated!)
 
 `clair-register-device-in-ttn` computes the managair device id from the device's TTN EUI, generates a device-specific key, and registers the device to the TTN application identified by `APP_ID`.
 
@@ -138,22 +138,23 @@ Options:
   --help                   Show this message and exit.
 ```
 
-### Restoring data from the TTN's Storage Integration
+### Restoring data from the TTN's Storage Integration (TTN v3 only)
 
-The [TTN Storage Integration](https://www.thethingsnetwork.org/docs/applications/storage/), if enabled, persists your TTN application's data for seven days. `clair-generate-fixtures-from-storage` reads this data and converts it to fixtures which can be read by Django's [`loaddata`](https://docs.djangoproject.com/en/3.1/ref/django-admin/#loaddata) command.
+The [TTN Storage Integration](https://www.thethingsindustries.com/docs/integrations/storage/), if enabled, persists your TTN application's data for seven days. `clair-generate-fixtures-from-storage` reads this data and converts it to fixtures which can be read by Django's [`loaddata`](https://docs.djangoproject.com/en/3.1/ref/django-admin/#loaddata) command.
 
 #### clair-generate-fixtures-from-storage
 
 ```shell
-Usage: clair-generate-fixtures-from-storage [OPTIONS] BASE_URL ACCESS_KEY_FILE
+Usage: clair-generate-fixtures-from-storage [OPTIONS] APPLICATION_ID
+                                            ACCESS_KEY_FILE
 
-  Generate fixtures from the TTN's Storage integration.
+  Generate fixtures from the TTN's Storage integration (v3).
 
-  BASE_URL is the base URL of the TTN's Storage integration API.
+  APPLICATIION_ID is the id of the TTN app.
   ACCESS_KEY_FILE is the file containing the TTN app's access key.
 
 Options:
-  -p, --payload-type TEXT  [default: ers]
-  -d, --duration TEXT      [default: 1d]
-  --help                   Show this message and exit.
+  -b, --base-url TEXT  [default: https://eu1.cloud.thethings.network/]
+  -d, --duration TEXT  [default: 24h]
+  --help               Show this message and exit.
 ```
