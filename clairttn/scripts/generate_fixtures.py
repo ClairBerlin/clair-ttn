@@ -25,15 +25,15 @@ UUID_MAP = {
 
 
 @click.command()
-@click.option('-p', '--payload-type', default='ers', show_default=True)
-@click.option('-d', '--duration', default='1d', show_default=True)
-@click.argument('base_url')
+@click.option('-b', '--base-url', default='https://eu1.cloud.thethings.network/', show_default=True)
+@click.option('-d', '--duration', default='24h', show_default=True)
+@click.argument('application-id')
 @click.argument('access-key-file', type=click.File())
-def generate_fixtures(base_url, access_key_file, payload_type, duration):
-    """Generate fixtures from the TTN's Storage integration.
+def generate_fixtures(application_id, access_key_file, base_url, duration):
+    """Generate fixtures from the TTN's Storage integration (v3).
 
     \b
-    BASE_URL is the base URL of the TTN's Storage integration API.
+    APPLICATIION_ID is the id of the TTN app.
     ACCESS_KEY_FILE is the file containing the TTN app's access key.
     """
 
@@ -41,28 +41,31 @@ def generate_fixtures(base_url, access_key_file, payload_type, duration):
 
     headers = {
         'Accept': 'application/json',
-        'Authorization': "key {}".format(access_key)
+        'Authorization': "Bearer {}".format(access_key)
     }
 
-    base_url.rstrip('/')
+    base_url = base_url.rstrip('/ ')
 
-    url = "{}/api/v2/query".format(base_url)
+    url = "{}/api/v3/as/applications/{}/packages/storage/uplink_message".format(base_url, application_id)
 
     params = { 'last': duration }
 
-    pdus = requests.get(url, headers=headers, params=params).json()
+    response = requests.get(url, headers=headers, params=params)
+
+    pdus = list(map(lambda l: json.loads(l), response.text.splitlines()))
 
     fixtures = []
     for pdu in pdus:
-        payload = base64.b64decode(pdu['raw'])
-        rx_datetime = dtparser.parse(pdu['time'])
+        payload = base64.b64decode(pdu['result']['uplink_message']['frm_payload'])
+        rx_datetime = dtparser.parse(pdu['result']['uplink_message']['received_at'])
+        device_id = pdu['result']['end_device_ids']['device_id']
         try:
             samples = ers.decode_payload(payload, rx_datetime)
         except types.PayloadContentException:
             continue
         for sample in samples:
             fields = {
-                'node': UUID_MAP.get(pdu['device_id'], pdu['device_id']),
+                'node': UUID_MAP.get(device_id, device_id),
                 'timestamp_s': sample.timestamp.value,
                 'co2_ppm': sample.co2.value,
                 'measurement_status': 'M'
