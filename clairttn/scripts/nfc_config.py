@@ -1,27 +1,15 @@
 #!/usr/bin/env python3
 
 import click
-import ttn
-import sys
-import clairttn.ers as ers
 import pyqrcode
 
 
-def _get_ttn_device(app_id, access_key, device_eui):
-    device_id = ers.ErsDeviceUUID(bytes.fromhex(device_eui))
-    applicationClient = ttn.HandlerClient(app_id, access_key).application()
-    return applicationClient.device(str(device_id))
-
-
-def _generate_nfc_config(ttn_device):
-    app_eui = ttn_device.lorawan_device.app_eui.hex()
-    app_key = ttn_device.lorawan_device.app_key.hex().upper()
-
+def _generate_nfc_config(join_eui, app_key):
     nfc_config = """\
 AppEui:{}
+AppKey:{}
 Ota:true
 Ack:false
-AppKey:{}
 SplPer:356
 Co2Per:1
 TempPer:0
@@ -29,7 +17,9 @@ SendPer:3
 VddPer:0
 QSize:5
 QOffset:false
-QPurge:true""".format(app_eui, app_key)
+QPurge:true""".format(
+        join_eui, app_key
+    )
 
     return nfc_config
 
@@ -40,30 +30,21 @@ def _generate_qr_png(nfc_config, fila_name):
 
 
 @click.command()
-@click.argument("app-id")
-@click.argument("access-key-file", type=click.File())
-@click.argument("device-eui", nargs=-1)
-def generate_nfc_config(app_id, access_key_file, device_eui):
-    """Create NFC config files for a device registered in the TTN.
+@click.argument("join-eui")
+@click.argument("dev-eui")
+@click.argument("app-key")
+def generate_nfc_config(join_eui, dev_eui, app_key):
+    """Create NFC config files for Elsys ERS CO2 sensors..
 
     \b
-    APP_ID is the id of the TTN application.
-    ACCESS_KEY_FILE is the file containing the access key of the TTN application.
-    DEVICE_EUI is the TTN device EUI.
+    APP_EUI is the TTN application EUI.
+    DEV_EUI is the TTN device EUI.
+    APP_KEY is the TTN's app_key root key.
     """
-    access_key = access_key_file.read().rstrip('\n')
 
-    for dev_eui in device_eui:
-        print(dev_eui)
+    nfc_config = _generate_nfc_config(join_eui, app_key)
 
-        try:
-            ttn_device = _get_ttn_device(app_id, access_key, dev_eui)
-        except RuntimeError:
-            print("device {} not found".format(dev_eui))
+    with open("{}-nfc-config.txt".format(dev_eui), "w") as fd:
+        fd.write(nfc_config)
 
-        nfc_config = _generate_nfc_config(ttn_device)
-
-        with open("{}-nfc-config.txt".format(dev_eui), 'w') as fd:
-            fd.write(nfc_config)
-
-        _generate_qr_png(nfc_config, "{}-nfc-config.png".format(dev_eui))
+    _generate_qr_png(nfc_config, "{}-nfc-config.png".format(dev_eui))
