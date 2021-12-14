@@ -113,7 +113,7 @@ Usage: clair-generate-nfc-config [OPTIONS] JOIN_EUI DEV_EUI APP_KEY
 
   Create NFC config files for Elsys ERS CO2 sensors..
 
-  APP_EUI is the TTN application EUI.
+  JOIN_EUI to join a specific TTN application.
   DEV_EUI is the TTN device EUI.
   APP_KEY is the TTN's app_key root key.
 

@@ -37,7 +37,7 @@ def generate_nfc_config(join_eui, dev_eui, app_key):
     """Create NFC config files for Elsys ERS CO2 sensors..
 
     \b
-    APP_EUI is the TTN application EUI.
+    JOIN_EUI to join a specific TTN application.
     DEV_EUI is the TTN device EUI.
     APP_KEY is the TTN's app_key root key.
     """
