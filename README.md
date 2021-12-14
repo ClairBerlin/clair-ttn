@@ -4,13 +4,13 @@ Clair-TTN is part of the _Clair Platform_, a system to collect measurements from
 
 Technically speaking, Clair-TTN is a service in the [Clair Stack](https://github.com/ClairBerlin/clair-stack), which is the infrastructure-as-code implementation of the Clair Platform.
 
-The application for The Things Network (TTN) supports both the legacy V2 stack as well as the new V3 stack.
+The application for The Things Network (TTN) supports the new TTN V3 stack.
 It can be run in the following modes:
 
-* Clairchen forwarding: subscribes to uplink messages of Clairchen nodes, decodes them and forwards measurement samples to the ingest endpoint of the backend API.
-* ERS forwarding: does the sampe for ERS nodes.
+* Clairchen forwarding: subscribes to uplink messages of [Clairchen](https://github.com/ClairBerlin/clairchen) nodes, decodes them and forwards measurement samples to the ingest endpoint of the backend API.
+* ERS forwarding: does the sampe for [Elsys ERS CO2](https://www.elsys.se/en/ers-co2-lite/) nodes.
 * ERS configuration: subscribes to uplink messages of ERS nodes and sends downlink messages to update the sensor's parameters to meet the TTN's airtime constraints.
-* OY1012 forwarding: forwarding for Talkpool OY1012.
+* OY1012 forwarding: forwarding for [Talkpool OY1012](https://talkpool.com/oy1210-lorawan-co2-meter/).
 
 In addition to the TTN application, this repository also contains a couple of TTN device management tools documented below.
 
@@ -33,7 +33,7 @@ Afterwards, the `clairttn` command should be available ([source](https://click.p
 python3 setup.py test
 ```
 
-## Usage
+## Clair-TTN Usage
 
 ```shell
 Usage: clair-ttn [OPTIONS]
@@ -65,20 +65,23 @@ The following parameters can also be specified as environment variables:
 
 ## TTN Node Management Tools
 
-### Device Registration (TTN v3)
+The Node Management allow batch registration of sensor nodes in both the clair stack and a corresponding TTN-v3 application.
 
-Registering a TTN node is a three-step process:
+### Device Registration
 
-* Register managair node using `clair-register-device-in-managair`.
-* TTN
-  1. Register TTN device using `ttn-lw-cli`.
-  2. Device configuration using `clair-generate-nfc-config` and the [NFC Tools app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html).
+Registering a specific sensor node with a given *device EUI* is a three-step process:
 
-Note that, currently, only the [ERS CO2](https://www.elsys.se/en/ers-co2/) and [ERS CO2 Lite](https://www.elsys.se/en/ers-co2-lite/) sensors by [ELSYS](https://www.elsys.se/) are supported by these tools.
+1. Register the sensor node in the clair stack's [managair](https://github.com/ClairBerlin/managair) application using `clair-register-device-in-managair`.
+2. Register the sensor node in your TTN-V3 application using `ttn-lw-cli`, the command line interface provide by The Things Industries.
+3. Use `clair-generate-nfc-config` to create a configuration file with the TTN join EUI, key material, and device settings, and encode this configuration in a QR code that can be applied to Elsys ERS devices by means of the [NFC Tools app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html).
+
+Currently, only the [ERS CO2](https://www.elsys.se/en/ers-co2/) and [ERS CO2 Lite](https://www.elsys.se/en/ers-co2-lite/) sensors by [ELSYS](https://www.elsys.se/) are supported by these tools.
 
 #### clair-register-device-in-managair
 
-`clair-register-device-in-managair` computes the managair device id from the device's TTN EUI and creates a corresponding node owned by the organization identified by OWNER_ID.
+To register a sensor node in the managair application, the device model, the communication protocol it uses, and the owning organization all must be set up already.
+
+`clair-register-device-in-managair` computes a universal device id from the device's TTN EUI and creates a corresponding node owned by the organization identified by OWNER_ID.
 
 ```shell
 Usage: clair-register-device-in-managair [OPTIONS] PROTOCOL_ID MODEL_ID
@@ -103,7 +106,7 @@ Options:
 
 #### clair-generate-nfc-config
 
-`clair-generate-nfc-config` writes the TTN application EUI and the TTN application key to a text file and a PNG QR code which can be read using the [NFC Tools app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html). Both files are created in the working directory as `${DEV_EUI}-nfc-config.txt` and `${DEV_EUI}-nfc-config.png`, respectively. Existing files are overwritten!
+`clair-generate-nfc-config` writes the TTN application EUI, the TTN application key, and sensor and transmission configuration compatible with the [TTN Fair Use Policy](https://www.thethingsnetwork.org/docs/lorawan/duty-cycle/#fair-use-policy) to a text file and a PNG-file QR code that can be read using the [NFC Tools app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html). Both files are created in the working directory as `${DEV_EUI}-nfc-config.txt` and `${DEV_EUI}-nfc-config.png`, respectively. Existing files are overwritten!
 
 ```shell
 Usage: clair-generate-nfc-config [OPTIONS] JOIN_EUI DEV_EUI APP_KEY
@@ -134,7 +137,7 @@ Options:
   --help  Show this message and exit.
 ```
 
-#### Registering devices with the TTN (v3) using `ttn-lw-cli`
+#### Registering devices with TTN-V3 using `ttn-lw-cli`
 
 [`ttn-lw-cli`](https://www.thethingsindustries.com/docs/getting-started/cli/) is the TTN's official command-line interface. Clair sensor nodes can be registered with a TTN application using the `end-devices create` command as follows:
 
