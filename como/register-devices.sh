@@ -20,7 +20,7 @@ register_device() {
 	test -n "$dev_eui" || fail_usage "DEV_EUI not specified"
 	
 	# register in managair
-	clair-register-device-in-managair -r https://clair-berlin.de/api/v1/ $protocol_id $model_id $org_id $dev_eui
+	clair-register-device-in-managair -r https://clair-berlin.de/api/v1/ -a como- $protocol_id $model_id $org_id $dev_eui
 	
 	dev_id=`clair-get-device-id $dev_eui`
 	
