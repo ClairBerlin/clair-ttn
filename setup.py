@@ -23,8 +23,8 @@ setup(
     entry_points='''
     [console_scripts]
     clair-ttn=clairttn.scripts.clairttn:main
+    clair-get-device-id=clairttn.scripts.get_clair_id:get_device_id
     clair-generate-fixtures-from-storage=clairttn.scripts.generate_fixtures:generate_fixtures
-    clair-register-device-in-ttn=clairttn.scripts.register_device:register_device_in_ttn
     clair-register-device-in-managair=clairttn.scripts.register_device:register_device_in_managair
     clair-generate-nfc-config=clairttn.scripts.nfc_config:generate_nfc_config
     ''',
