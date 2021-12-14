@@ -65,7 +65,7 @@ The following parameters can also be specified as environment variables:
 
 ## TTN Node Management Tools
 
-The Node Management allow batch registration of sensor nodes in both the clair stack and a corresponding TTN-v3 application.
+The Node Management allow batch registration of sensor nodes in both the clair stack and a corresponding TTN-v3 application, as well as importing sensor data from the [TTN storage integration](https://www.thethingsindustries.com/docs/integrations/storage/).
 
 ### Device Registration
 
