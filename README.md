@@ -65,53 +65,16 @@ The following parameters can also be specified as environment variables:
 
 ## TTN Node Management Tools
 
-### Device Registration
+### Device Registration (TTN v3)
 
 Registering a TTN node is a three-step process:
 
-* TTN
-  1. Register TTN device using `clair-register-device-in-ttn`.
-  2. Device configuration using `clair-generate-nfc-config` and the [NFC Tools app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html).
 * Register managair node using `clair-register-device-in-managair`.
+* TTN
+  1. Register TTN device using `ttn-lw-cli`.
+  2. Device configuration using `clair-generate-nfc-config` and the [NFC Tools app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html).
 
 Note that, currently, only the [ERS CO2](https://www.elsys.se/en/ers-co2/) and [ERS CO2 Lite](https://www.elsys.se/en/ers-co2-lite/) sensors by [ELSYS](https://www.elsys.se/) are supported by these tools.
-
-#### clair-register-device-in-ttn (TTN v2 only, deprecated!)
-
-`clair-register-device-in-ttn` computes the managair device id from the device's TTN EUI, generates a device-specific key, and registers the device to the TTN application identified by `APP_ID`.
-
-```shell
-Usage: clair-register-device-in-ttn [OPTIONS] APP_ID ACCESS_KEY_FILE APP_EUI
-                                    [DEVICE_EUI]...
-
-  Register Clair TTN nodes in the TTN.
-
-  APP_ID is the TTN application id.
-  ACCESS_KEY_FILE is the file that contains the access key of the TTN application.
-  APP_EUI is the TTN app EUI.
-  DEVICE_EUI is the TTN device EUI.
-
-Options:
-  --help  Show this message and exit.
-```
-
-#### clair-generate-nfc-config
-
-`clair-generate-nfc-config` retrieves the application EUI and the device-specific application key from the TTN application identified by `APP_ID`, generates NFC settings according to [ELSYS's specification](https://www.elsys.se/en/elsys-nfc-settings-specification/) and writes them both to a text file and a PNG QR code which can be read using the [NFC Tools app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html).
-
-```shell
-Usage: clair-generate-nfc-config [OPTIONS] APP_ID ACCESS_KEY_FILE
-                                 [DEVICE_EUI]...
-
-  Create NFC config files for a device registered in the TTN.
-
-  APP_ID is the id of the TTN application.
-  ACCESS_KEY_FILE is the file containing the access key of the TTN application.
-  DEVICE_EUI is the TTN device EUI.
-
-Options:
-  --help  Show this message and exit.
-```
 
 #### clair-register-device-in-managair
 
@@ -128,15 +91,77 @@ Usage: clair-register-device-in-managair [OPTIONS] PROTOCOL_ID MODEL_ID
   OWNER_ID is the id of the (existing) owner organization in the managair.
   DEVICE_EUI is the TTN device EUI.
 
-  You will be prompted to enter usename and password of an account which
-  needs to be a member of the owner organization. The account needs to have
-  the right to create a node.
+  You will be prompted to enter usename and password of an account which needs
+  to be a member of the owner organization. The account needs to have the
+  right to create a node.
 
 Options:
   -r, --api-root TEXT      [default: http://localhost:8888/api/v1/]
   -a, --alias-prefix TEXT
   --help                   Show this message and exit.
 ```
+
+#### clair-generate-nfc-config
+
+`clair-generate-nfc-config` writes the TTN application EUI and the TTN application key to a text file and a PNG QR code which can be read using the [NFC Tools app for iOS](https://www.wakdev.com/en/apps/nfc-tools-ios.html). Both files are created in the working directory as `${DEV_EUI}-nfc-config.txt` and `${DEV_EUI}-nfc-config.png`, respectively. Existing files are overwritten!
+
+```shell
+Usage: clair-generate-nfc-config [OPTIONS] JOIN_EUI DEV_EUI APP_KEY
+
+  Create NFC config files for Elsys ERS CO2 sensors..
+
+  APP_EUI is the TTN application EUI.
+  DEV_EUI is the TTN device EUI.
+  APP_KEY is the TTN's app_key root key.
+
+Options:
+  --help  Show this message and exit.
+```
+
+#### clair-get-device-id
+
+`clair-get-device-id` converts the device EUI of an Elsys ERS sensor node to the internal Clair device id.
+
+```shell
+Usage: clair-get-device-id [OPTIONS] DEV_EUI
+
+  Convert a device EUI of an Elsys ERS sensor node to the corresponding
+  managair device id.
+
+  DEV_EUI is the LoraWAN device EUI.
+
+Options:
+  --help  Show this message and exit.
+```
+
+#### Registering devices with the TTN (v3) using `ttn-lw-cli`
+
+[`ttn-lw-cli`](https://www.thethingsindustries.com/docs/getting-started/cli/) is the TTN's official command-line interface. Clair sensor nodes can be registered with a TTN application using the `end-devices create` command as follows:
+
+```shell
+ttn-lw-cli end-devices create $app_id $dev_id \
+  --dev-eui $dev_eui \
+  --join-eui $join_eui \
+  --frequency-plan-id EU_863_870 \
+  --with-root-keys \
+  --lorawan-version 1.0.3 \
+  --lorawan-phy-version 1.0.3-a
+```
+
+The following variables must be provided:
+
+* `$app_id`: the id of your TTN application,
+* `$dev_id`: the managair device id as returned by `clair-get-device-id`.
+* `$join_eui`: the TTN device's JoinEUI, which may be specific to the device or the application.
+
+We add the `--with-root-keys` option to have root keys generated. The application key needs to be passed on to `clair-generate-nfc-config`. To read back the key you can use the following command:
+
+```shell
+app_key=`ttn-lw-cli end-devices get $app_id $dev_id --root-keys | \
+  python3 -c "import sys, json; print(json.load(sys.stdin)['root_keys']['app_key']['key'])"`
+```
+
+[register-devices.sh](como/register-devices.sh) is an exemplary wrapper script written for the Berlin COMo project.
 
 ### Restoring data from the TTN's Storage Integration (TTN v3 only)
 
